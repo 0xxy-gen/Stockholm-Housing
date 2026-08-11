@@ -666,11 +666,30 @@ function zoomTo(nz,cx,cy){
 }
 document.getElementById("zi").onclick=function(){ zoomTo(z+1); };
 document.getElementById("zo").onclick=function(){ zoomTo(z-1); };
+/* A trackpad pinch fires a burst of small wheel events, so stepping a whole zoom
+   level per event overshoots badly. Accumulate the deltas and only step once the
+   gesture has travelled WHEEL_STEP pixels' worth — raise it for gentler zooming,
+   lower it for snappier. A notched mouse wheel still gets one level per notch. */
+var WHEEL_STEP = 110, wheelAcc = 0, wheelT = 0;
 mapEl.addEventListener("wheel", function(e){
   if(inUI(e.target)) return;
   e.preventDefault();
-  var r=mapEl.getBoundingClientRect();
-  zoomTo(z+(e.deltaY<0?1:-1), e.clientX-r.left, e.clientY-r.top);
+  var d = e.deltaY;
+  if(e.deltaMode === 1) d *= 16; else if(e.deltaMode === 2) d *= 400;
+  var now = Date.now();
+  if(now - wheelT > 300 || (d < 0) !== (wheelAcc < 0)) wheelAcc = 0;  /* new gesture, or reversed */
+  wheelT = now;
+  var r = mapEl.getBoundingClientRect(), cx = e.clientX-r.left, cy = e.clientY-r.top;
+  if(!e.ctrlKey && Math.abs(d) >= 100){          /* discrete mouse wheel notch */
+    wheelAcc = 0;
+    zoomTo(z + (d < 0 ? 1 : -1), cx, cy);
+    return;
+  }
+  wheelAcc += d;
+  if(Math.abs(wheelAcc) < WHEEL_STEP) return;
+  var dir = wheelAcc < 0 ? 1 : -1;
+  wheelAcc = 0;
+  zoomTo(z + dir, cx, cy);
 }, {passive:false});
 mapEl.addEventListener("dblclick", function(e){
   if(inUI(e.target)) return;
