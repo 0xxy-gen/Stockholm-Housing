@@ -11,7 +11,8 @@ fetched from OpenStreetMap, so an internet connection is required.
 
 ## Today
 
-The default screen is triage, not the map. Four sections, in the order they need you:
+The map is the home screen; **Today** is one tab across and is where the daily work happens.
+Four sections, in the order they need you:
 **Needs your reply** (every listing where the landlord answered last), **Today**, **Coming up**,
 and **Waiting on a time** (proposals with no hour agreed). Each row carries the listing, why
 it's there, and one primary action — Open chat for a call or a reply, Directions for a visit.

@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stockholm rental listings</title>
+<title>Stockholm Housing</title>
 <style>
 :root{
   /* blush paper, plum ink — warm neutrals so nothing reads cold next to the brights */
@@ -30,9 +30,7 @@
 *{box-sizing:border-box}
 body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg);display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased}
 #nav{flex:0 0 auto;display:flex;align-items:center;gap:20px;height:52px;padding:0 18px;background:var(--surface);border-bottom:1px solid var(--border);z-index:30}
-#nav .brand{font-size:15px;font-weight:700;letter-spacing:-.015em;white-space:nowrap;
-  background:linear-gradient(96deg,var(--c-me),var(--accent) 42%,var(--c-fav) 78%,var(--c-them));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+#nav .brand{font-size:15px;font-weight:700;letter-spacing:-.015em;white-space:nowrap;color:var(--accent)}
 #nav{background:linear-gradient(180deg,var(--surface),var(--surface-2))}
 ::selection{background:var(--accent-soft);color:var(--text)}
 #nav .sp{flex:1}
@@ -398,10 +396,10 @@ button,input,select{font:inherit;color:inherit}
 <div id="lb" onclick="lbClose()"><span class="cl2">&times;</span><img id="lbi" alt=""></div>
 
 <header id="nav">
-  <div class="brand">Stockholm listings</div>
+  <div class="brand">Stockholm Housing</div>
   <nav id="tabs">
-    <button class="tab on" data-v="today">Today</button>
-    <button class="tab" data-v="map">Map</button>
+    <button class="tab on" data-v="map">Map</button>
+    <button class="tab" data-v="today">Today</button>
     <button class="tab" data-v="fav">Favourites <b id="tabfc">0</b></button>
     <button class="tab" data-v="vw">Viewings <b id="tabvc">0</b></button>
   </nav>
@@ -1712,7 +1710,7 @@ function init(){
   var p=proj((minLat+maxLat)/2,(minLng+maxLng)/2,z);
   originX=p.x-w/2; originY=p.y-h/2;
   setTransform(); drawTiles(); drawMarkers(); paintList(); updateFavTab(); updateViewTab();
-  showView("today");
+  showView("map");
 
   var nc=DATA.filter(function(d){ return d.lat===null && !isDeleted(d); });
   document.getElementById("nocoord").innerHTML = nc.length
