@@ -29,11 +29,15 @@ fetched from OpenStreetMap, so an internet connection is required.
 
 ## Favourites and notes
 
-The **Favourites** tab (top-left, next to Map) shows every starred listing as a card with its
-photo, key facts, a link to the original ad, a transit-route button, and a notes box. Notes are
-written only when you press **Save note** — the button stays greyed out until there's something
-unsaved, and flips to "Saved" once it's written. The same notes box appears on the map's detail
-card once a listing is starred.
+The **Favourites** tab (top-left, next to Map) is a two-pane view: a scrolling list of starred
+listings on the left, and the selected one in full on the right — large photo with thumbnails,
+every field, links to the original ad and chat, a transit-route button, and the notes box.
+
+Notes are written only when you press **Save note**. The button stays disabled until there is
+something unsaved; the label next to NOTES reads "Unsaved" while you're editing and "Saved" once
+written, and the left-hand list marks which listings carry a note. Switching to another listing
+mid-edit keeps your unsaved text — it comes back when you return, still marked unsaved. The same
+notes box appears on the map's detail card once a listing is starred.
 
 Favourites and notes live in the browser's `localStorage`, so they're per-device and per-origin:
 what you star on the live site is separate from what you star opening the file locally, and
