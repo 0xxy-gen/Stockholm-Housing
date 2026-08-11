@@ -22,10 +22,30 @@ fetched from OpenStreetMap, so an internet connection is required.
 - **Filters** — status, source, favourites only, max total rent, min size. The Filters button
   shows how many are active; "Clear all filters" resets them.
 - **Price labels** — rents appear on the markers once you zoom in far enough.
+- **Distance to Stockholm C** — straight-line km on every row, sortable, plus a button on
+  each listing that opens Google Maps transit directions from that address to Stockholm
+  Centralstation.
 - **Dark mode** — follows your OS setting, map tiles included.
 
-Favourites are stored in the browser's `localStorage`, so they're per-device and survive
-reloads but aren't part of the file.
+## Favourites and notes
+
+The **Favourites** tab (top-left, next to Map) shows every starred listing as a card with its
+photo, key facts, a link to the original ad, a transit-route button, and a notes box. Notes are
+written only when you press **Save note** — the button stays greyed out until there's something
+unsaved, and flips to "Saved" once it's written. The same notes box appears on the map's detail
+card once a listing is starred.
+
+Favourites and notes live in the browser's `localStorage`, so they're per-device and per-origin:
+what you star on the live site is separate from what you star opening the file locally, and
+neither is part of the repo. Un-starring keeps the note, so re-starring brings it back.
+
+### Why travel time is a link, not a number
+
+Showing a real door-to-door transit time in the page needs a routing API (Google Directions,
+or Trafiklab/ResRobot for SL), and any key would have to be embedded in this file — which is
+public. So the app shows straight-line distance, which needs no key and is enough to sort by,
+and hands the real journey off to Google Maps. Wiring up a live API is doable if the key is
+kept off the public page (private repo, or a small proxy).
 
 ## Status colours
 
