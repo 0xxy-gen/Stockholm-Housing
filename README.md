@@ -77,10 +77,13 @@ the data in the file. The keys of what you removed are kept in `localStorage`, a
 
 | Colour | Meaning |
 | --- | --- |
-| 🟠 Orange | Waiting on me (they replied last) |
-| 🔵 Blue | Waiting on them |
-| ⚪ Grey | No reply yet |
+| 🟠 Orange | Waiting on me (they replied last) — your move |
+| 🟢 Green | Waiting on them — ball in their court |
+| ⚪ Mauve | No reply yet |
 | 🟡 Yellow | Favourite |
+
+Pink carries the interface itself — buttons, focus rings, selection — so it never collides with
+a listing status.
 
 Closed and rented conversations are filtered out — they're dead ends for an active search.
 They're still in the data; the line that drops them is at the top of the script block.
