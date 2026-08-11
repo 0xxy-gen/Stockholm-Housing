@@ -378,6 +378,21 @@ DATA = DATA.filter(function(d){ return statusKey(d.st) !== "Closed"; });
               mi move-in · le lease end · ext extension possible
 --------------------------------------------------------------------------- */
 var EXTRA = [
+  {
+    src:"Akademisk Kvart",
+    a:"Byle all\u00e9 11a", ar:"T\u00e4by",
+    lat:59.4990371, lng:18.0895631,
+    tot:5500, rent:5500, fee:0,
+    sq:"12", rm:"1", ty:"Room", c:"Erik Mikael Tims\u00e4ter",
+    st:"Waiting on them",
+    el:"Included", net:1, pk:"",
+    mi:"2026-09-01", le:"", ext:"",
+    lu:"https://www.akademiskkvart.se/en/housing-ad/301801a5eb3e92a3a-b8e-23641e3126e85117470-ae3b-98",
+    im:[],
+    no:"Furnished. Shared kitchen and toilet, no own entrance. Electricity, heating, water and internet included in the rent. Speaks Swedish and English.",
+    seedFav:1,
+    seedNote:"Texting me on WhatsApp. Will get back to me end of August \u2014 I'm top of his priority list."
+  },
   /* {
     src:"Blocket", a:"Exempelgatan 1", ar:"Södermalm",
     lat:59.3145, lng:18.0723, tot:9500, rent:9500, fee:0,
@@ -390,7 +405,7 @@ DATA = DATA.concat(EXTRA);
 /* every listing carries a source; anything pre-existing came from the Qasa inbox */
 DATA.forEach(function(d){ if(!d.src) d.src = "Qasa"; });
 
-var SRC_C = {"Qasa":"#0e9d8d","Blocket":"#d9202a","HomeQ":"#5b3df5","Bostad Direkt":"#c2761b","Samtrygg":"#2a7de1","Booli":"#0b7a3b","Hemnet":"#e0165b"};
+var SRC_C = {"Qasa":"#0e9d8d","Akademisk Kvart":"#7c3aed","Blocket":"#d9202a","HomeQ":"#5b3df5","Bostad Direkt":"#c2761b","Samtrygg":"#2a7de1","Booli":"#0b7a3b","Hemnet":"#e0165b"};
 var SRC_FALLBACK = ["#7b5ea7","#b0641c","#1f7a8c","#a03060","#3f7d20"];
 var SOURCES = [];
 DATA.forEach(function(d){ if(SOURCES.indexOf(d.src) < 0) SOURCES.push(d.src); });
@@ -489,6 +504,28 @@ var view="map";
    what you removed live in localStorage, so "Restore all" always brings them back. */
 var DEL={}; try{ DEL=JSON.parse(localStorage.getItem("qasaDeleted")||"{}")||{}; }catch(e){ DEL={}; }
 function isDeleted(d){ return !!DEL[favKey(d)]; }
+
+/* A listing can ship with a starting note and favourite state (seedNote / seedFav) so they
+   apply on every device, not just the browser they were typed in. Each is applied once and
+   then persisted exactly like something you saved yourself — so editing or clearing it
+   afterwards sticks, and it never comes back to overwrite you. */
+var SEEDED={}; try{ SEEDED=JSON.parse(localStorage.getItem("qasaSeeded")||"{}")||{}; }catch(e){ SEEDED={}; }
+(function(){
+  var changed=false;
+  DATA.forEach(function(d){
+    if(!d.seedNote && !d.seedFav) return;
+    var k=favKey(d);
+    if(SEEDED[k]) return;
+    if(d.seedFav && !(k in FAV)) FAV[k]=1;
+    if(d.seedNote && !(k in NOTES)) NOTES[k]=d.seedNote;
+    SEEDED[k]=1; changed=true;
+  });
+  if(changed) try{
+    localStorage.setItem("qasaFav", JSON.stringify(FAV));
+    localStorage.setItem("qasaNotes", JSON.stringify(NOTES));
+    localStorage.setItem("qasaSeeded", JSON.stringify(SEEDED));
+  }catch(e){}
+})();
 function liveCount(){ return DATA.filter(function(d){ return !isDeleted(d); }).length; }
 function delCount(){ return DATA.filter(isDeleted).length; }
 function saveDel(){ try{ localStorage.setItem("qasaDeleted", JSON.stringify(DEL)); }catch(e){} }
