@@ -204,6 +204,8 @@ button,input,select{font:inherit;color:inherit}
 #fvlist .r2{font-size:12px;color:var(--text-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #fvlist .r3{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-2);margin-top:3px}
 #fvlist .dot{width:7px;height:7px;border-radius:50%;background:var(--c);flex:0 0 7px}
+#fvlist .fs{flex:0 0 24px;align-self:flex-start;border:0;background:none;font-size:15px;line-height:1;color:var(--c-fav);cursor:pointer;padding:1px 0 0}
+#fvlist .fs:hover{opacity:.5}
 #fvlist .nb{margin-left:auto;padding:0 6px;border-radius:999px;background:var(--surface-3);color:var(--text-3);font-size:10px;font-weight:600}
 #fvlist .nb.un{background:color-mix(in srgb,var(--c-me) 18%,transparent);color:var(--c-me)}
 
@@ -224,7 +226,8 @@ button,input,select{font:inherit;color:inherit}
 .fd .thumbs img.sel{opacity:1;outline:2px solid var(--accent);outline-offset:1px}
 .fd .acts{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .fd .acts .btn{flex:1 1 auto;min-width:120px}
-.fd .acts .btn.star{flex:0 0 42px;min-width:0;font-size:15px;background:color-mix(in srgb,var(--c-fav) 16%,transparent);border-color:color-mix(in srgb,var(--c-fav) 45%,transparent);color:var(--c-fav)}
+.fd .acts .btn.star{flex:0 1 auto;min-width:0;background:color-mix(in srgb,var(--c-fav) 14%,transparent);border-color:color-mix(in srgb,var(--c-fav) 45%,transparent);color:var(--c-fav)}
+.fd .acts .btn.star:hover{background:color-mix(in srgb,var(--c-fav) 26%,transparent)}
 .fd .facts{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
 .fd .facts div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
 .fd .facts span{color:var(--text-3)}
@@ -539,7 +542,9 @@ function paintFav(){
       +   '<div class="r1"><span class="ad">'+esc(d.a)+'</span><span class="pr">'+fmt(d.tot)+'</span></div>'
       +   '<div class="r2">'+esc(d.ar)+(sq?' \u00b7 '+sq+' m\u00b2':'')+(distLabel(d)?' \u00b7 '+distLabel(d)+' to C':'')+'</div>'
       +   '<div class="r3"><span class="dot" style="--c:'+col(d.st)+'"></span>'+esc(LBL[st]||d.st)+badge+'</div>'
-      + '</div></li>';
+      + '</div>'
+      + '<button class="fs" data-act="unfav" data-i="'+i+'" title="Remove from favourites">\u2605</button>'
+      + '</li>';
   }).join("");
   paintFavDetail();
 }
@@ -582,7 +587,7 @@ function paintFavDetail(){
   } else { h += '<div class="noph">No photos available</div>'; }
 
   h += '<div class="acts">'
-    + '<button class="btn sec star" data-act="unfav" data-i="'+i+'" title="Remove from favourites">\u2605</button>'
+    + '<button class="btn sec star" data-act="unfav" data-i="'+i+'" title="Remove from favourites">\u2605 Remove from favourites</button>'
     + (lurl ? '<a class="btn pri" href="'+esc(lurl)+'" target="_blank" rel="noopener">View on '+esc(d.src)+' \u2197</a>' : '')
     + '<a class="btn sec" href="'+esc(routeUrl(d))+'" target="_blank" rel="noopener">Transit route to Stockholm C \u2197</a>'
     + '<button class="btn sec" data-act="map" data-i="'+i+'">Show on map</button>'
@@ -926,7 +931,11 @@ document.getElementById("fvbody").addEventListener("click", function(ev){
   if(a==="sel"){ if(i===favSel) return; stashDraft(); favSel=i; paintFav(); }
   else if(a==="save"){ saveNote(i,"f"); paintFav(); }
   else if(a==="map"){ stashDraft(); showView("map"); select(i,true); }
-  else if(a==="unfav"){ stashDraft(); toggleFav(i,ev); favSel=null; paintFav(); }
+  else if(a==="unfav"){
+    stashDraft(); toggleFav(i,ev); delete DRAFT[i];
+    if(favSel===i) favSel=null;      /* only re-pick when the open one was removed */
+    paintFav();
+  }
   else if(a==="fthumb"){
     var k=+b.getAttribute("data-k"), hero=document.getElementById("fph"), d=DATA[favSel];
     hero.src=IMG(d.im[k],"1000x660"); hero.setAttribute("data-k",k);
