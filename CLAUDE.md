@@ -23,8 +23,15 @@ Optional: `lat`/`lng` (omit to keep off the map), `c` contact, `sq`, `rm`, `ty`,
 `le`, `ext`.
 
 Seed fields, applied once per listing then owned by the user: `seedFav`, `seedNote`, and
-`vw:[{w:"YYYY-MM-DDTHH:MM", n:"note"}]` for viewings (merged per entry, so adding a new one
-never disturbs existing entries).
+`vw:[]` for viewings, merged per entry so adding one never disturbs existing entries.
+
+A viewing entry is `{w, n, p}`:
+- `w` — `"YYYY-MM-DDTHH:MM"` when a time is agreed, `"YYYY-MM-DD"` when only a day is,
+  `""` when neither. `n` is the note. `p:1` marks it **proposed**.
+- Booked (no `p`) entries appear under **Booked**, grouped by day. Proposed entries appear
+  under **Proposed**, dated ones under their day and undated ones under "No date yet".
+- Entries are keyed by date **and** proposed-ness, so a proposal can later be joined by a
+  booked entry for the same day without either being lost.
 
 `st` is one of `"Waiting on me"`, `"Waiting on them"`, `"No reply"`. Closed/rented listings are
 filtered out at runtime.
@@ -49,8 +56,14 @@ order:
    the user explicitly asks.
 3. **Never delete a listing** unless the landlord states the place is gone, and then say so
    clearly in the summary.
-4. Only record a viewing when a specific date **and** time were actually agreed. Proposed but
-   unconfirmed times go in the summary.
+4. Viewings come in two kinds and both belong in the data:
+   - A specific date **and** time agreed → a booked entry (no `p`).
+   - A viewing raised but not pinned down (a day without an hour, an open invitation, a
+     landlord asking which day suits) → a proposed entry with `p:1`, `w` set to the day if
+     one was named and `""` otherwise.
+   When a previously proposed viewing gets a time, **update that entry in place**: set its
+   `w` to the full timestamp and drop `p`. Do not leave a duplicate proposal behind. If the
+   proposal falls through, remove it and say so in the summary.
 5. Match threads to listings on the `cu` chat URL where possible, else address + contact.
 6. Before committing, confirm the listing count is exactly unchanged. If it moved, something was
    added or dropped — undo it.
