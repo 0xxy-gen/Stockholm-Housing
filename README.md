@@ -9,6 +9,13 @@ built to take listings from other sites alongside them.
 Or open `index.html` in any browser. There is no build step and no server; map tiles are
 fetched from OpenStreetMap, so an internet connection is required.
 
+## Today
+
+The default screen is triage, not the map. Four sections, in the order they need you:
+**Needs your reply** (every listing where the landlord answered last), **Today**, **Coming up**,
+and **Waiting on a time** (proposals with no hour agreed). Each row carries the listing, why
+it's there, and one primary action — Open chat for a call or a reply, Directions for a visit.
+
 ## What it does
 
 - **Map** — pan/zoom slippy map (OSM tiles) with one marker per listing, coloured by
@@ -22,9 +29,9 @@ fetched from OpenStreetMap, so an internet connection is required.
 - **Filters** — status, source, favourites only, max total rent, min size. The Filters button
   shows how many are active; "Clear all filters" resets them.
 - **Price labels** — rents appear on the markers once you zoom in far enough.
-- **Distance to Stockholm C** — straight-line km on every row, sortable, plus a button on
-  each listing that opens Google Maps transit directions from that address to Stockholm
-  Centralstation.
+- **Distance to Stockholm C** — a rough transit-time band (never a false-precision kilometre;
+  hover for the straight-line figure it came from), sortable, plus a button that opens Google
+  Maps transit directions for the real journey.
 - **Dark mode** — follows your OS setting, map tiles included.
 
 ## Favourites and notes

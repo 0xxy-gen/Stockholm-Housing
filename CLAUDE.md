@@ -25,7 +25,10 @@ Optional: `lat`/`lng` (omit to keep off the map), `c` contact, `sq`, `rm`, `ty`,
 Seed fields, applied once per listing then owned by the user: `seedFav`, `seedNote`, and
 `vw:[]` for viewings, merged per entry so adding one never disturbs existing entries.
 
-A viewing entry is `{w, n, p}`:
+A viewing entry is `{w, n, p, k}`:
+- `k` — `"call"` for a video call, `"visit"` for going to the address. Calls hide directions,
+  distance and the map button, since none of it applies. Leave unset when it is genuinely
+  undecided.
 - `w` — `"YYYY-MM-DDTHH:MM"` when a time is agreed, `"YYYY-MM-DD"` when only a day is,
   `""` when neither. `n` is the note. `p:1` marks it **proposed**.
 - Booked (no `p`) entries appear under **Booked**, grouped by day. Proposed entries appear
@@ -64,7 +67,9 @@ order:
    When a previously proposed viewing gets a time, **update that entry in place**: set its
    `w` to the full timestamp and drop `p`. Do not leave a duplicate proposal behind. If the
    proposal falls through, remove it and say so in the summary.
-5. Match threads to listings on the `cu` chat URL where possible, else address + contact.
+5. Match threads to listings on address + contact. The `cu` chat URLs exported from Qasa do
+   NOT match the real threads, so never navigate by them — the UI routes Qasa chat links to
+   the inbox root instead of to a confidently wrong conversation.
 6. Before committing, confirm the listing count is exactly unchanged. If it moved, something was
    added or dropped — undo it.
 7. If Chrome is not running, the extension is unreachable, or the inbox shows a login wall: touch
