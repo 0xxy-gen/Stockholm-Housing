@@ -51,6 +51,19 @@ public. So the app shows straight-line distance, which needs no key and is enoug
 and hands the real journey off to Google Maps. Wiring up a live API is doable if the key is
 kept off the public page (private repo, or a small proxy).
 
+## Scheduled viewings
+
+The **Viewings** tab lists booked viewings grouped by day, with "Today" / "Tomorrow" / "in N
+days" labels and a count on the tab. Each entry shows the listing, its status and source, your
+note for the visit, and buttons for transit directions to the address, the listing page, and
+showing it on the map. Add or edit one from the tab's **+ Add viewing** button, or from the
+viewings strip on any listing's detail card.
+
+Viewings live in `localStorage` like favourites and notes. Listings can also carry a `vw:[]`
+array in the data — each entry is merged in once and marked "from your messages", which is how
+the daily inbox sweep records a time you agreed with a landlord without ever overwriting an
+entry you edited by hand.
+
 ## Removing listings
 
 Every row in the sidebar and in the favourites list has a **×**, and both detail views have a
