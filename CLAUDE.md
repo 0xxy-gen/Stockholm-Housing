@@ -36,6 +36,11 @@ A viewing entry is `{w, n, p, k}`:
 - Entries are keyed by date **and** proposed-ness, so a proposal can later be joined by a
   booked entry for the same day without either being lost.
 
+`todo` is a one-line action the user owes a listing that is not simply "reply" — it surfaces in
+a **To do** section at the top of Today. `todoWa` is a phone number that turns the row's primary
+button into a WhatsApp link. Ticking a to-do off is stored per browser; never clear `todo`
+during a sweep, and only add one when the user asks for it.
+
 `st` is one of `"Waiting on me"`, `"Waiting on them"`, `"No reply"`. Closed/rented listings are
 filtered out at runtime.
 
