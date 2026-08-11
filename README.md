@@ -74,8 +74,9 @@ entry you edited by hand.
 
 ## Removing listings
 
-Every row in the sidebar and in the favourites list has a **×**, and both detail views have a
-**Remove this listing** button. All of them open a confirmation dialog first.
+Removing lives in the detail views only — **Remove this listing** on the map card and on the
+favourite, behind a confirmation dialog. There is deliberately no × in the list rows: it sat a
+few pixels from the favourite star, so a mis-click removed a listing instead of starring it.
 
 Removing hides a listing from the map, the list, the counts and favourites — it does not touch
 the data in the file. The keys of what you removed are kept in `localStorage`, and a
@@ -118,8 +119,9 @@ var EXTRA = [
 
 Required: `a` (address), `ar` (area), `tot` (total monthly SEK), `st` (status), `src`.
 Everything else is optional — omit `lat`/`lng` and the listing stays off the map but still
-appears in a note under the list. Photo URLs in `im` may be full `https://` URLs; bare paths
-are resolved against Qasa's image CDN. Known sources get a fixed badge colour, and unknown
+appears in a note under the list. Photo URLs in `im` may be full `https://` URLs, a path
+beginning `img/` for a file committed next to the page, or a bare key resolved against Qasa's
+image CDN. Images that fail to load hide themselves rather than showing a broken-image glyph. Known sources get a fixed badge colour, and unknown
 ones are assigned a stable colour from a fallback palette.
 
 ## Data

@@ -583,7 +583,13 @@ var active = null, spider = null, query = "", sortBy = "rent", minSq = 0, srcOff
 /* ---------- helpers ---------- */
 function statusKey(s){ return s.indexOf("Closed")===0 ? "Closed" : s; }
 function col(s){ return CVAR[statusKey(s)] || "var(--c-none)"; }
-function IMG(p,size){ return /^https?:\/\//.test(p) ? p : "https://img.qasa.se/unsafe/"+size+"/smart/"+p; }
+/* Full URLs pass through, "img/..." is a file committed next to this page, and a bare key is
+   resolved against Qasa's image CDN at the requested size. */
+function IMG(p,size){
+  if(/^https?:\/\//.test(p) || p.indexOf("img/")===0) return p;
+  return "https://img.qasa.se/unsafe/"+size+"/smart/"+p;
+}
+var IMGERR = ' onerror="this.style.visibility=\'hidden\'"';
 function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g," "); }
 function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function sqOf(d){ var v = parseFloat(d.sq); return isFinite(v) ? v : 0; }
@@ -1167,7 +1173,6 @@ function paintFav(){
       +   '<div class="r3"><span class="dot" style="--c:'+col(d.st)+'"></span>'+esc(LBL[st]||d.st)+badge+'</div>'
       + '</div>'
       + '<button class="fs" data-act="unfav" data-i="'+i+'" title="Remove from favourites">\u2605</button>'
-      + '<button class="del" data-act="del" data-i="'+i+'" title="Remove listing">\u00d7</button>'
       + '</li>';
   }).join("");
   paintFavDetail();
@@ -1202,7 +1207,7 @@ function paintFavDetail(){
     +   (distLabel(d)?'<span class="dpill" title="'+esc(distTitle(d))+'">'+distLabel(d)+' to Stockholm C</span>':'')+'</div>';
 
   if(d.im && d.im.length){
-    h += '<img class="hero" id="fph" data-k="0" data-act="fbig" src="'+IMG(d.im[0],"1000x660")+'" alt="Photo of '+esc(d.a)+'">';
+    h += '<img class="hero" id="fph" data-k="0" data-act="fbig" src="'+IMG(d.im[0],"1000x660")+'" alt="Photo of '+esc(d.a)+'"'+IMGERR+'>';
     if(d.im.length>1){
       h += '<div class="thumbs">'+d.im.map(function(pth,j){
         return '<img class="'+(j===0?"sel":"")+'" data-act="fthumb" data-k="'+j+'" src="'+IMG(pth,"200x150")+'" alt="">';
@@ -1411,7 +1416,7 @@ function card(i){
         + '<div class="cb">';
 
   if(d.im && d.im.length){
-    h += '<img id="ph0" class="ph" data-k="0" src="'+IMG(d.im[0],"700x460")+'" alt="Photo of '+esc(d.a)+'" onclick="bigPhoto('+i+')">';
+    h += '<img id="ph0" class="ph" data-k="0" src="'+IMG(d.im[0],"700x460")+'" alt="Photo of '+esc(d.a)+'" onclick="bigPhoto('+i+')"'+IMGERR+'>';
     if(d.im.length>1){
       h += '<div class="thumbs">'+d.im.map(function(p,j){
         return '<img class="'+(j===0?"sel":"")+'" src="'+IMG(p,"120x90")+'" alt="" onclick="setPhoto('+i+','+j+')">';
@@ -1482,7 +1487,6 @@ function paintList(){
         +   '<div class="r3"><span class="dot" style="--c:'+col(d.st)+'"></span>'+esc(LBL[s]||d.st)+(d.c?' · '+esc(d.c):'')+srcBadge(d.src)+'</div>'
         + '</div>'
         + '<button class="fs'+(isFav(d)?" on":"")+'" title="Favourite" onclick="toggleFav('+i+',event)">'+(isFav(d)?"★":"☆")+'</button>'
-        + '<button class="del" title="Remove listing" onclick="requestDelete('+i+');event.stopPropagation()">×</button>'
         + '</li>';
     }).join("");
   }
