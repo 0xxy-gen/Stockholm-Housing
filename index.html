@@ -7,7 +7,7 @@
   --text:#15181d; --text-2:#596174; --text-3:#88909f;
   --border:#e4e7ec; --border-2:#d2d7df;
   --accent:#2563eb; --accent-fg:#fff; --accent-soft:#e7efff;
-  --c-me:#e0700c; --c-them:#2563eb; --c-none:#98a0ad; --c-fav:#f0a000;
+  --c-me:#e0700c; --c-them:#2563eb; --c-none:#98a0ad; --c-fav:#f0a000; --c-danger:#c0392b;
   --warn-bg:#fff8e6; --warn-br:#f0dfb2; --warn-fg:#7a5c14;
   --sh-1:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.09);
   --sh-2:0 16px 36px -10px rgba(16,24,40,.3),0 4px 10px -4px rgba(16,24,40,.1);
@@ -19,7 +19,7 @@
   --text:#e7eaef; --text-2:#a2aab8; --text-3:#79828f;
   --border:#272c35; --border-2:#353b45;
   --accent:#4d8dff; --accent-soft:#182642;
-  --c-me:#f0873a; --c-them:#4d8dff; --c-none:#8b939f; --c-fav:#ffb92e;
+  --c-me:#f0873a; --c-them:#4d8dff; --c-none:#8b939f; --c-fav:#ffb92e; --c-danger:#e0655a;
   --warn-bg:#2a2413; --warn-br:#453a1c; --warn-fg:#d6c189;
   --sh-1:0 1px 2px rgba(0,0,0,.5); --sh-2:0 18px 44px -12px rgba(0,0,0,.75);
   --tilef:invert(1) hue-rotate(180deg) brightness(.9) contrast(.92) saturate(.8);
@@ -253,11 +253,35 @@ button,input,select{font:inherit;color:inherit}
 #card .save{margin-top:8px;width:100%;padding:7px;border:1px solid transparent;background:var(--accent);color:var(--accent-fg);border-radius:var(--r-m);font-size:12.5px;font-weight:600;cursor:pointer}
 #card .save:disabled{background:var(--surface-2);border-color:var(--border-2);color:var(--text-3);cursor:default}
 
+/* ---------- remove listing: confirm dialog, row buttons, restore bar ---------- */
+#dlg{position:fixed;inset:0;background:rgba(10,12,16,.55);display:none;align-items:center;justify-content:center;z-index:120;padding:20px}
+#dlg.on{display:flex}
+#dlg .box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-l);box-shadow:var(--sh-2);max-width:430px;width:100%;padding:20px 22px}
+#dlg h3{margin:0 0 8px;font-size:16px;font-weight:650;letter-spacing:-.01em}
+#dlg p{margin:0;font-size:13px;line-height:1.55;color:var(--text-2)}
+#dlg .row{display:flex;gap:9px;margin-top:20px;justify-content:flex-end}
+#dlg button{padding:8px 16px;border-radius:var(--r-m);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-2)}
+#dlg button:hover{background:var(--surface-3);color:var(--text)}
+#dlg button.danger{background:var(--c-danger);border-color:transparent;color:#fff}
+#dlg button.danger:hover{filter:brightness(1.1)}
+#list .del,#fvlist .del{flex:0 0 20px;align-self:flex-start;border:0;background:none;font-size:15px;line-height:1;color:var(--border-2);cursor:pointer;padding:1px 0 0}
+#list .del:hover,#fvlist .del:hover{color:var(--c-danger)}
+.rmbtn{margin-top:14px;width:100%;padding:7px;border:1px solid var(--border);background:none;color:var(--text-3);border-radius:var(--r-m);font-size:12px;font-weight:550;cursor:pointer}
+.rmbtn:hover{border-color:var(--c-danger);color:var(--c-danger)}
+#delbar{padding:7px 18px;font-size:11.5px;color:var(--text-3);background:var(--surface-2);border-bottom:1px solid var(--border);display:none;justify-content:space-between;align-items:center;gap:8px}
+#delbar.on{display:flex}
+#delbar button{border:0;background:none;color:var(--accent);font:600 11.5px inherit;cursor:pointer;padding:0}
+#delbar button:hover{text-decoration:underline}
+
 #lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:99;cursor:zoom-out}
 #lb.show{display:flex}
 #lb img{max-width:90%;max-height:90%;border-radius:var(--r-m)}
 #lb .cl2{position:absolute;top:16px;right:24px;color:#fff;font-size:34px;line-height:1;cursor:pointer;opacity:.8}
 </style></head><body>
+<div id="dlg"><div class="box">
+  <h3 id="dlgt"></h3><p id="dlgm"></p>
+  <div class="row"><button id="dlgno">Cancel</button><button id="dlgyes" class="danger">Remove listing</button></div>
+</div></div>
 <div id="lb" onclick="lbClose()"><span class="cl2">&times;</span><img id="lbi" alt=""></div>
 
 <aside id="side">
@@ -297,6 +321,7 @@ button,input,select{font:inherit;color:inherit}
     <button id="reset">Clear all filters</button>
   </div>
   <div id="stats"></div>
+  <div id="delbar"><span id="delcount"></span><button id="delrestore">Restore all</button></div>
   <ul id="list"></ul>
   <div id="nocoord"></div>
 </aside>
@@ -460,12 +485,19 @@ var FAV={}; try{ FAV=JSON.parse(localStorage.getItem("qasaFav")||"{}")||{}; }cat
    listing brings back what you wrote. */
 var NOTES={}; try{ NOTES=JSON.parse(localStorage.getItem("qasaNotes")||"{}")||{}; }catch(e){ NOTES={}; }
 var view="map";
+/* Removed listings are hidden, not erased: the data stays in the file and the keys of
+   what you removed live in localStorage, so "Restore all" always brings them back. */
+var DEL={}; try{ DEL=JSON.parse(localStorage.getItem("qasaDeleted")||"{}")||{}; }catch(e){ DEL={}; }
+function isDeleted(d){ return !!DEL[favKey(d)]; }
+function liveCount(){ return DATA.filter(function(d){ return !isDeleted(d); }).length; }
+function delCount(){ return DATA.filter(isDeleted).length; }
+function saveDel(){ try{ localStorage.setItem("qasaDeleted", JSON.stringify(DEL)); }catch(e){} }
 function noteOf(d){ return NOTES[favKey(d)] || ""; }
 function hasNote(d){ return !!noteOf(d); }
 var favOnly=false;
 function favKey(d){ var u=(d.lu||"").replace(" (removed)",""); return u ? u.split("/").pop() : (d.a+"|"+d.c); }
 function isFav(d){ return !!FAV[favKey(d)]; }
-function favCount(){ return DATA.filter(isFav).length; }
+function favCount(){ return DATA.filter(function(d){ return isFav(d) && !isDeleted(d); }).length; }
 function toggleFav(i,ev){
   if(ev) ev.stopPropagation();
   var k=favKey(DATA[i]); if(FAV[k]) delete FAV[k]; else FAV[k]=1;
@@ -499,6 +531,48 @@ function noteBlock(i,k,d){
        + '<button class="save" id="'+k+'save" data-i="'+i+'" data-act="save" disabled>Save note</button>';
 }
 
+/* ---------- confirm dialog ---------- */
+var dlgCb=null;
+function confirmDialog(title, msgHtml, okLabel, cb){
+  document.getElementById("dlgt").textContent=title;
+  document.getElementById("dlgm").innerHTML=msgHtml;
+  document.getElementById("dlgyes").textContent=okLabel;
+  document.getElementById("dlg").className="on";
+  dlgCb=cb;
+  document.getElementById("dlgno").focus();
+}
+function closeDialog(){ document.getElementById("dlg").className=""; dlgCb=null; }
+document.getElementById("dlgno").onclick=closeDialog;
+document.getElementById("dlgyes").onclick=function(){ var c=dlgCb; closeDialog(); if(c) c(); };
+document.getElementById("dlg").onclick=function(ev){ if(ev.target===this) closeDialog(); };
+
+/* ---------- remove / restore listings ---------- */
+function requestDelete(i){
+  var d=DATA[i];
+  confirmDialog("Remove this listing?",
+    "<b>"+esc(d.a)+"</b>"+(d.ar?", "+esc(d.ar):"")+" will be hidden from the map, the list and favourites. "
+    + "Nothing is deleted from the file \u2014 you can bring it back with <b>Restore all</b> under the listing count.",
+    "Remove listing",
+    function(){ doDelete(i); });
+}
+function doDelete(i){
+  DEL[favKey(DATA[i])]=1; saveDel();
+  if(active===i) closeCard();
+  if(favSel===i) favSel=null;
+  drawMarkers(); paintList(); updateFavTab();
+  if(view==="fav") paintFav();
+}
+function restoreAll(){
+  var n=delCount();
+  confirmDialog("Restore removed listings?", "This brings back all "+n+" removed listing"+(n===1?"":"s")+".",
+    "Restore all", function(){
+      DEL={}; saveDel();
+      drawMarkers(); paintList(); updateFavTab();
+      if(view==="fav") paintFav();
+    });
+}
+document.getElementById("delrestore").onclick=restoreAll;
+
 /* ---------- favourites view ---------- */
 function showView(v){
   view=v;
@@ -511,7 +585,7 @@ function showView(v){
 var favSel = null, DRAFT = {};   /* DRAFT keeps unsaved note text alive while you click around */
 
 function favIdx(){
-  var a=[]; DATA.forEach(function(d,i){ if(isFav(d)) a.push(i); });
+  var a=[]; DATA.forEach(function(d,i){ if(isFav(d) && !isDeleted(d)) a.push(i); });
   return a.sort(function(x,y){ return DATA[x].tot-DATA[y].tot; });
 }
 function draftOf(i){ return (i in DRAFT) ? DRAFT[i] : noteOf(DATA[i]); }
@@ -544,6 +618,7 @@ function paintFav(){
       +   '<div class="r3"><span class="dot" style="--c:'+col(d.st)+'"></span>'+esc(LBL[st]||d.st)+badge+'</div>'
       + '</div>'
       + '<button class="fs" data-act="unfav" data-i="'+i+'" title="Remove from favourites">\u2605</button>'
+      + '<button class="del" data-act="del" data-i="'+i+'" title="Remove listing">\u00d7</button>'
       + '</li>';
   }).join("");
   paintFavDetail();
@@ -602,6 +677,7 @@ function paintFavDetail(){
     +   (dirty?"Unsaved":(noteOf(d)?"Saved":""))+'</span></div>'
     + '<textarea id="fnote" data-i="'+i+'" placeholder="Viewing time, what to ask, gut feel...">'+esc(draftOf(i))+'</textarea>'
     + '<button class="save" id="fsave" data-i="'+i+'" data-act="save"'+(dirty?"":" disabled")+'>Save note</button>'
+    + '<button class="rmbtn" data-act="del" data-i="'+i+'">Remove this listing</button>'
     + '</div>';
 
   det.innerHTML=h;
@@ -615,7 +691,7 @@ function matchesQuery(d){
   return fold(d.a+" "+d.ar+" "+(d.c||"")+" "+(d.ty||"")+" "+d.src).indexOf(query) > -1;
 }
 function visible(d){
-  return (!favOnly || isFav(d)) && filters[statusKey(d.st)] && !srcOff[d.src] && d.tot <= maxRent && sqOf(d) >= minSq && matchesQuery(d);
+  return !isDeleted(d) && (!favOnly || isFav(d)) && filters[statusKey(d.st)] && !srcOff[d.src] && d.tot <= maxRent && sqOf(d) >= minSq && matchesQuery(d);
 }
 function filterCount(){
   var n = 0;
@@ -809,6 +885,7 @@ function card(i){
   if(isFav(d)) h += noteBlock(i,"c",d);
   h += '<div class="facts">'+facts.map(function(f){ return '<div><span>'+f[0]+'</span><em>'+f[1]+'</em></div>'; }).join("")+'</div>';
   if(d.no) h += '<div class="note">'+esc(d.no)+'</div>';
+  h += '<button class="rmbtn" onclick="requestDelete('+i+')">Remove this listing</button>';
   if(lurl) h += '<div class="lurl">'+esc(lurl)+'</div>';
   h += '</div>';
 
@@ -852,18 +929,27 @@ function paintList(){
         +   '<div class="r3"><span class="dot" style="--c:'+col(d.st)+'"></span>'+esc(LBL[s]||d.st)+(d.c?' · '+esc(d.c):'')+srcBadge(d.src)+'</div>'
         + '</div>'
         + '<button class="fs'+(isFav(d)?" on":"")+'" title="Favourite" onclick="toggleFav('+i+',event)">'+(isFav(d)?"★":"☆")+'</button>'
+        + '<button class="del" title="Remove listing" onclick="requestDelete('+i+');event.stopPropagation()">×</button>'
         + '</li>';
     }).join("");
   }
 
   var n=idx.length, fc=filterCount();
   document.getElementById("stats").innerHTML =
-    '<span><b>'+n+'</b> of '+DATA.length+' listings</span>'
+    '<span><b>'+n+'</b> of '+liveCount()+' listings</span>'
     + (n ? '<span>'+fmt(Math.min.apply(null,idx.map(function(i){return DATA[i].tot;})))+'–'+fmt(Math.max.apply(null,idx.map(function(i){return DATA[i].tot;})))+' SEK</span>' : '');
   document.getElementById("ftog").className = fc ? "act"+(filtOpen?" open":"") : (filtOpen?"open":"");
   document.getElementById("fcnt").textContent = fc;
   document.getElementById("reset").className = fc||query ? "on" : "";
   var fce=document.getElementById("fc"); if(fce) fce.textContent=favCount();
+  var dn=delCount();
+  document.getElementById("srcline").textContent=liveCount()+" listings · "+SOURCES.join(" · ");
+  document.getElementById("delbar").className = dn ? "on" : "";
+  document.getElementById("delcount").textContent = dn+" listing"+(dn===1?"":"s")+" removed";
+  STAT.forEach(function(st){
+    var el=document.querySelector(".cnt-"+st.replace(/ /g,"_"));
+    if(el) el.textContent=DATA.filter(function(d){ return statusKey(d.st)===st && !isDeleted(d); }).length;
+  });
   Array.prototype.forEach.call(document.querySelectorAll("#chips .chip"), function(c){
     var s=c.getAttribute("data-s");
     c.setAttribute("aria-pressed", String(s==="fav" ? favOnly : filters[s]));
@@ -885,7 +971,7 @@ document.getElementById("ftog").onclick=function(){
 
 document.getElementById("chips").innerHTML =
   STAT.map(function(s){
-    return '<button class="chip" data-s="'+s+'" aria-pressed="true" style="--c:'+CVAR[s]+'"><i></i>'+LBL[s]+' <b>'+DATA.filter(function(d){return statusKey(d.st)===s;}).length+'</b></button>';
+    return '<button class="chip" data-s="'+s+'" aria-pressed="true" style="--c:'+CVAR[s]+'"><i></i>'+LBL[s]+' <b class="cnt-'+s.replace(/ /g,"_")+'">'+DATA.filter(function(d){return statusKey(d.st)===s;}).length+'</b></button>';
   }).join("")
   + '<button class="chip" data-s="fav" aria-pressed="false" style="--c:var(--c-fav)"><i></i>Favourites <b id="fc">0</b></button>';
 
@@ -931,6 +1017,7 @@ document.getElementById("fvbody").addEventListener("click", function(ev){
   if(a==="sel"){ if(i===favSel) return; stashDraft(); favSel=i; paintFav(); }
   else if(a==="save"){ saveNote(i,"f"); paintFav(); }
   else if(a==="map"){ stashDraft(); showView("map"); select(i,true); }
+  else if(a==="del"){ stashDraft(); requestDelete(i); }
   else if(a==="unfav"){
     stashDraft(); toggleFav(i,ev); delete DRAFT[i];
     if(favSel===i) favSel=null;      /* only re-pick when the open one was removed */
@@ -1033,7 +1120,8 @@ mapEl.addEventListener("dblclick", function(e){
   zoomTo(Math.floor(zf+1e-6)+1, e.clientX-r.left, e.clientY-r.top);
 });
 window.addEventListener("keydown", function(e){
-  if(e.key==="Escape"){ if(document.getElementById("lb").className) lbClose(); else if(spider){ spider=null; drawMarkers(); } else closeCard(); }
+  if(e.key==="Escape"){ if(dlgCb!==null||document.getElementById("dlg").className) closeDialog();
+    else if(document.getElementById("lb").className) lbClose(); else if(spider){ spider=null; drawMarkers(); } else closeCard(); }
 });
 
 /* ---------- init ---------- */
@@ -1048,7 +1136,6 @@ function init(){
   document.getElementById("rv").textContent="Any";
   SQ_MAX=Math.ceil(Math.max.apply(null,DATA.map(sqOf))/5)*5;
   document.getElementById("ss").max=SQ_MAX;
-  document.getElementById("srcline").textContent=DATA.length+" listings · "+SOURCES.join(" · ");
 
   document.getElementById("legend").innerHTML =
     STAT.map(function(s){ return '<div><span class="sw" style="--c:'+CVAR[s]+'"></span>'+LBL_LONG[s]+'</div>'; }).join("")
@@ -1067,7 +1154,7 @@ function init(){
   originX=p.x-w/2; originY=p.y-h/2;
   setTransform(); drawTiles(); drawMarkers(); paintList(); updateFavTab();
 
-  var nc=DATA.filter(function(d){ return d.lat===null; });
+  var nc=DATA.filter(function(d){ return d.lat===null && !isDeleted(d); });
   document.getElementById("nocoord").innerHTML = nc.length
     ? "Not on the map (listing removed, no coordinates): "+nc.map(function(d){ return esc(d.a)+" ("+esc(d.c)+", "+fmt(d.tot)+" SEK)"; }).join(", ")
     : "";

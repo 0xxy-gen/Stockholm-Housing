@@ -51,6 +51,15 @@ public. So the app shows straight-line distance, which needs no key and is enoug
 and hands the real journey off to Google Maps. Wiring up a live API is doable if the key is
 kept off the public page (private repo, or a small proxy).
 
+## Removing listings
+
+Every row in the sidebar and in the favourites list has a **×**, and both detail views have a
+**Remove this listing** button. All of them open a confirmation dialog first.
+
+Removing hides a listing from the map, the list, the counts and favourites — it does not touch
+the data in the file. The keys of what you removed are kept in `localStorage`, and a
+**"N listings removed · Restore all"** bar appears under the listing count to bring them back.
+
 ## Status colours
 
 | Colour | Meaning |
