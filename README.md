@@ -3,8 +3,10 @@
 A single-file, dependency-free map view of my Stockholm rental search — built from my Qasa
 inbox so I can see every listing I've contacted on one map instead of scrolling a message list.
 
-Open `stockholm-listings-map.html` in any browser. There is no build step and no server;
-map tiles are fetched from OpenStreetMap, so an internet connection is required.
+**Live: https://0xxy-gen.github.io/Stockholm-Housing/**
+
+Or open `index.html` in any browser. There is no build step and no server; map tiles are
+fetched from OpenStreetMap, so an internet connection is required.
 
 ## What it does
 
