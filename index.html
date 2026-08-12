@@ -1054,22 +1054,23 @@ function rkParts(d, lo, hi){
   /* talk and view are kept for the row subtitle, not for the score */
   return {price:p, dist:dist, talk:(st==="Waiting on me"?1:(st==="Waiting on them"?0.8:0)), view:view};
 }
-function rkScore(parts){
+function rkScore(parts, on){
+  on = on || RKON;
   var tot=0, wsum=0;
-  RKF.forEach(function(f){ if(RKON[f.k]){ tot+=parts[f.k]*f.w; wsum+=f.w; } });
+  RKF.forEach(function(f){ if(on[f.k]){ tot+=parts[f.k]*f.w; wsum+=f.w; } });
   return wsum ? Math.round(tot/wsum*100) : 0;
 }
+/* Cards always show the full price + travel score. The Ranking toggles are for interrogating
+   the list while you are in it, not for silently redefining the number everywhere else. */
+var RKALL={}; RKF.forEach(function(f){ RKALL[f.k]=1; });
 function rkRange(){
   var t=[]; DATA.forEach(function(d){ if(!isDeleted(d)) t.push(d.tot); });
   return t.length ? {lo:Math.min.apply(null,t), hi:Math.max.apply(null,t)} : {lo:0,hi:1};
 }
-/* the number a card shows is the same one Ranking shows, factor toggles included */
-function scoreOf(i){ var r=rkRange(); return rkScore(rkParts(DATA[i], r.lo, r.hi)); }
+function scoreOf(i){ var r=rkRange(); return rkScore(rkParts(DATA[i], r.lo, r.hi), RKALL); }
 function scoreChip(i){
-  var on=RKF.filter(function(f){ return RKON[f.k]; }).map(function(f){ return f.label.toLowerCase(); });
-  if(!on.length) return "";
-  return '<span class="scorechip" title="Ranking score out of 100, on '+on.join(" and ")
-       + '. Open the Ranking tab for the breakdown.">'+scoreOf(i)+'<b>score</b></span>';
+  return '<span class="scorechip" title="Ranking score out of 100, on price and travel time to '
+       + 'Stockholm C. Open the Ranking tab for the breakdown.">'+scoreOf(i)+'<b>score</b></span>';
 }
 function rkNote(d, parts){
   var st=statusKey(d.st), vs=viewsOf(DATA.indexOf(d));

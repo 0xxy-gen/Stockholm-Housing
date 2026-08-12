@@ -65,8 +65,9 @@ to chase. Filter to the ones who replied, then read a score that means one thing
 
 The score also appears as a chip on every listing card — the map detail card, the favourite, the
 viewing cards and the Today rows — so you never have to switch tabs to see where something
-stands. It is the same number the Ranking view shows, factor toggles included, so the two can
-never disagree.
+stands. Cards always show the full **price + travel** score. The factor toggles are for
+interrogating the list while you're in the Ranking tab; they deliberately don't redefine the
+number everywhere else.
 
 **Show** hides listings by conversation state — switch off *No reply yet* and you're looking only
 at live conversations — and **Favourites** narrows to starred ones. Scores never change when you
