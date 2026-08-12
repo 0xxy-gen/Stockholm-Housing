@@ -436,6 +436,7 @@ button,input,select{font:inherit;color:inherit}
 #list .del:hover,#fvlist .del:hover{color:var(--c-danger)}
 .rmbtn{margin-top:14px;width:100%;padding:7px;border:1px solid var(--border);background:none;color:var(--text-3);border-radius:var(--r-m);font-size:12px;font-weight:550;cursor:pointer}
 .rmbtn:hover{border-color:var(--c-danger);color:var(--c-danger)}
+.lnkbtn:hover{border-color:var(--accent);color:var(--accent)}
 #delbar{padding:7px 18px;font-size:11.5px;color:var(--text-3);background:var(--surface-2);border-bottom:1px solid var(--border);display:none;justify-content:space-between;align-items:center;gap:8px}
 #delbar.on{display:flex}
 #delbar button{border:0;background:none;color:var(--accent);font:600 11.5px inherit;cursor:pointer;padding:0}
@@ -989,11 +990,45 @@ function noteBlock(i,k,d){
        + '<button class="save" id="'+k+'save" data-i="'+i+'" data-act="save" disabled>Save note</button>';
 }
 
-/* ---------- ranking ----------
-   Four things decide how good a lead is: what it costs, how far out it is, whether anyone is
-   actually talking to you, and whether you have a viewing. Each is scored 0-1, then weighted.
-   Every factor can be switched off, and the weights re-normalise over whatever is left, so the
-   score always reads out of 100 and you can see which listing wins on your own terms. */
+/* ---------- deep links ----------
+   Everything lived at one URL, so the back button did nothing and a listing could not be sent to
+   anyone. The fragment never reaches GitHub's servers, so hash routing works on a static page:
+   #today, #ranking, #listing/<id>. Writing the hash sets a lock so our own write does not bounce
+   back through hashchange and re-run whatever caused it. */
+var VIEWHASH={map:"#map", today:"#today", fav:"#favourites", vw:"#viewings", rk:"#ranking"};
+var HASHVIEW={}; for(var vk in VIEWHASH) HASHVIEW[VIEWHASH[vk].slice(1)]=vk;
+var hashLock=false;
+function writeHash(h, push){
+  if(location.hash===h) return;
+  hashLock=true;
+  try{ history[push?"pushState":"replaceState"](null,"",h); }catch(e){ location.hash=h; }
+  setTimeout(function(){ hashLock=false; }, 0);
+}
+function listingHash(i){ return "#listing/"+encodeURIComponent(favKey(DATA[i])); }
+function applyHash(){
+  var h=(location.hash||"").replace(/^#/,"");
+  if(!h){ showView("map"); return; }
+  if(h.indexOf("listing/")===0){
+    var key=decodeURIComponent(h.slice(8)), i=-1;
+    DATA.forEach(function(d,j){ if(favKey(d)===key) i=j; });
+    showView("map");
+    if(i>=0 && !isDeleted(DATA[i])) select(i,true);   /* unknown or removed: just show the map */
+    return;
+  }
+  showView(HASHVIEW[h] || "map");
+}
+window.addEventListener("hashchange", function(){ if(!hashLock) applyHash(); });
+window.addEventListener("popstate", function(){ if(!hashLock) applyHash(); });
+
+function copyLink(i,btn){
+  var url=location.origin+location.pathname+listingHash(i);
+  if(navigator.clipboard) navigator.clipboard.writeText(url).catch(function(){});
+  var old=btn.textContent;
+  btn.textContent="Link copied";
+  setTimeout(function(){ btn.textContent=old; }, 1400);
+}
+
+/* ---------- ranking ---------- */
 /* The score is only ever about the flat: what it costs and how far out it is. Everything about
    the conversation — whether they replied, whether a viewing is booked — is a STATE, not a
    quality, and states belong in filters. Blending them in made the number unreadable: a good
@@ -1495,6 +1530,7 @@ document.getElementById("delrestore").onclick=restoreAll;
 /* ---------- favourites view ---------- */
 function showView(v){
   view=v;
+  writeHash(VIEWHASH[v]||"#map", false);
   document.getElementById("favview").className   = v==="fav"   ? "on" : "";
   document.getElementById("vwview").className    = v==="vw"    ? "on" : "";
   document.getElementById("todayview").className = v==="today" ? "on" : "";
@@ -1813,16 +1849,18 @@ function card(i){
   h += missingNote(facts);
   if(d.no) h += '<div class="note">'+esc(d.no)+'</div>';
   h += viewingsBlock(i);
+  h += '<button class="rmbtn lnkbtn" onclick="copyLink('+i+',this)">Copy link to this listing</button>';
   h += '<button class="rmbtn" onclick="requestDelete('+i+')">Remove this listing</button>';
   if(lurl) h += '<div class="lurl">'+esc(lurl)+'</div>';
   h += '</div>';
 
   cardEl.innerHTML=h; cardEl.className="show"; cardEl.scrollTop=0;
 }
-function closeCard(){ cardEl.className=""; active=null; drawMarkers(); paintList(); }
+function closeCard(){ cardEl.className=""; active=null; drawMarkers(); paintList(); if(view==="map") writeHash("#map", false); }
 
 function select(i,pan){
   active=i; card(i); drawMarkers(); paintList();
+  if(view==="map") writeHash(listingHash(i), true);
   var li=document.getElementById("li"+i);
   if(li){
     var lr=li.getBoundingClientRect(), pr=listEl.getBoundingClientRect();
@@ -2123,7 +2161,7 @@ function init(){
   var p=proj((minLat+maxLat)/2,(minLng+maxLng)/2,z);
   originX=p.x-w/2; originY=p.y-h/2;
   setTransform(); drawTiles(); drawMarkers(); paintList(); updateFavTab(); updateViewTab();
-  showView("map");
+  applyHash();   /* honour a shared link on first load */
 
   var nc=DATA.filter(function(d){ return d.lat===null && !isDeleted(d); });
   document.getElementById("nocoord").innerHTML = nc.length

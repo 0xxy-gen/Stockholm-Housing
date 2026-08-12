@@ -6,6 +6,17 @@ built to take listings from other sites alongside them.
 
 **Live: https://0xxy-gen.github.io/Stockholm-Housing/**
 
+Every view and every listing has its own URL, so the back button works and a listing can be
+sent to someone:
+
+| | |
+| --- | --- |
+| `#map` `#today` `#favourites` `#viewings` `#ranking` | the five views |
+| `#listing/<id>` | opens the map on that listing with its card showing |
+
+The **Copy link to this listing** button on a detail card puts the second one on your clipboard.
+An unknown or removed id falls back to the map rather than erroring.
+
 Or open `index.html` in any browser. There is no build step and no server; map tiles are
 fetched from OpenStreetMap, so an internet connection is required.
 
