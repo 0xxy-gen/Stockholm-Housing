@@ -43,14 +43,18 @@ the best lead. Every listing is scored out of 100 on four things:
 
 | Factor | Weight | Full marks when |
 | --- | --- | --- |
-| Price | 40% | It's the cheapest listing you still have |
-| Contact | 33% | The landlord replied last (80% if you did, 0 if the thread is silent) |
-| Travel | 27% | It's at Stockholm C. Uses the measured 9am transit time where one has been looked up, scored against a 90-minute worst case; otherwise a straight-line estimate, always shown with a `~` |
+| Price | 60% | It's the cheapest listing you still have |
+| Travel | 40% | It's at Stockholm C. Uses the measured 9am transit time where one has been looked up, scored against a 90-minute worst case; otherwise a straight-line estimate, always shown with a `~` |
 
-Whether a viewing exists is shown on every row but is **not** scored. A viewing only exists
-because you chased it, so ranking on it rewards your own past choices and pushes down exactly
-the leads that need attention — booked viewings already lead the Today screen and have their own
-tab.
+**The score is only ever about the flat.** Where the conversation has got to — whether they
+replied, whether a viewing is booked — is a *state*, not a quality, so it filters the list
+instead of quietly moving the numbers. Blending it in made the score unreadable (a good flat and
+a talkative landlord both produced 80) and was circular, since you chose who to message and who
+to chase. Filter to the ones who replied, then read a score that means one thing.
+
+**Show** hides listings by conversation state — switch off *No reply yet* and you're looking only
+at live conversations — and **Favourites** narrows to starred ones. Scores never change when you
+filter; price is always ranked against every live listing.
 
 Each row shows its four component bars, so a high score is never a black box — you can see
 whether something ranks well because it's cheap or because it's the only one with a viewing.

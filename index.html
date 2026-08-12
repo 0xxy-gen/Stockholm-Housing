@@ -290,7 +290,10 @@ button,input,select{font:inherit;color:inherit}
 #rkbody{flex:1;overflow-y:auto;padding:18px 24px 40px}
 .rkwrap{max-width:820px;margin:0 auto}
 #rkw{display:flex;gap:6px;flex-wrap:wrap}
+#rkw{align-items:center}
 #rkw .chip{padding:5px 10px;font-size:11.5px}
+.rkl{font-size:9.5px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);margin-right:1px}
+.rkl.sep{margin-left:9px;padding-left:11px;border-left:1px solid var(--border)}
 .rkfav{color:var(--c-fav);font-size:13px;margin-left:5px}
 .rkrow.fav{background:linear-gradient(90deg,color-mix(in srgb,var(--c-fav) 7%,var(--surface)),var(--surface) 40%)}
 .rkhead{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;font-size:12px;color:var(--text-3)}
@@ -991,25 +994,27 @@ function noteBlock(i,k,d){
    actually talking to you, and whether you have a viewing. Each is scored 0-1, then weighted.
    Every factor can be switched off, and the weights re-normalise over whatever is left, so the
    score always reads out of 100 and you can see which listing wins on your own terms. */
-/* Deliberately no "viewing booked" factor. A viewing exists because you chased it, so scoring
-   it just rewards what you already prioritised and pushes down the leads that most need
-   attention. Booked viewings lead the Today screen and have their own tab; this view is for
-   deciding what to chase next. Whether a viewing exists is still shown on each row as context. */
+/* The score is only ever about the flat: what it costs and how far out it is. Everything about
+   the conversation — whether they replied, whether a viewing is booked — is a STATE, not a
+   quality, and states belong in filters. Blending them in made the number unreadable: a good
+   flat and a talkative landlord produced the same 80. And both are partly circular, since you
+   chose who to message and who to chase. Filter to the ones who replied, then read a score that
+   means one thing. */
 var RKF=[
-  {k:"price",  label:"Price",    w:0.30, c:"var(--c-fav)"},
-  {k:"dist",   label:"Travel",   w:0.20, c:"var(--c-them)"},
-  {k:"talk",   label:"Contact",  w:0.25, c:"var(--c-me)"}
+  {k:"price",  label:"Price",    w:0.60, c:"var(--c-fav)"},
+  {k:"dist",   label:"Travel",   w:0.40, c:"var(--c-them)"}
 ];
-var RKON={price:1,dist:1,talk:1}, RKFAV=false;
+var RKON={price:1,dist:1};
+var RKST={"Waiting on me":1,"Waiting on them":1,"No reply":1}, RKFAV=false;
 
 function rkParts(d, lo, hi){
   var p = (hi>lo) ? 1-((d.tot-lo)/(hi-lo)) : 1;          /* cheapest = 1 */
   var dist = travelScore(d);
   var st = statusKey(d.st);
-  var talk = st==="Waiting on me" ? 1 : (st==="Waiting on them" ? 0.8 : 0);
   var vs = viewsOf(DATA.indexOf(d));
   var view = vs.some(function(v){ return !v.p; }) ? 1 : (vs.length ? 0.5 : 0);
-  return {price:p, dist:dist, talk:talk, view:view};
+  /* talk and view are kept for the row subtitle, not for the score */
+  return {price:p, dist:dist, talk:(st==="Waiting on me"?1:(st==="Waiting on them"?0.8:0)), view:view};
 }
 function rkScore(parts){
   var tot=0, wsum=0;
@@ -1028,11 +1033,20 @@ function paintRank(){
   /* price is normalised against every live listing, never the filtered subset — a score must
      not move just because you narrowed the view */
   var all=[]; DATA.forEach(function(d,i){ if(!isDeleted(d)) all.push(i); });
-  var live=all.filter(function(i){ return !RKFAV || isFav(DATA[i]); });
+  var live=all.filter(function(i){
+    return RKST[statusKey(DATA[i].st)] && (!RKFAV || isFav(DATA[i]));
+  });
   var body=document.getElementById("rkbody");
-  document.getElementById("rkw").innerHTML = RKF.map(function(f){
-    return '<button class="chip" data-rk="'+f.k+'" aria-pressed="'+(RKON[f.k]?"true":"false")+'" style="--c:'+f.c+'"><i></i>'+f.label+'</button>';
-  }).join("") + '<button class="chip" data-rkfav="1" aria-pressed="'+(RKFAV?"true":"false")+'" style="--c:var(--c-fav)"><i></i>Favourites only</button>';
+  document.getElementById("rkw").innerHTML =
+      '<span class="rkl">Score by</span>'
+    + RKF.map(function(f){
+        return '<button class="chip" data-rk="'+f.k+'" aria-pressed="'+(RKON[f.k]?"true":"false")+'" style="--c:'+f.c+'"><i></i>'+f.label+'</button>';
+      }).join("")
+    + '<span class="rkl sep">Show</span>'
+    + STAT.map(function(st){
+        return '<button class="chip" data-rkst="'+st+'" aria-pressed="'+(RKST[st]?"true":"false")+'" style="--c:'+CVAR[st]+'"><i></i>'+LBL[st]+'</button>';
+      }).join("")
+    + '<button class="chip" data-rkfav="1" aria-pressed="'+(RKFAV?"true":"false")+'" style="--c:var(--c-fav)"><i></i>Favourites</button>';
   if(!live.length){ body.innerHTML='<div id="rkempty">'+(RKFAV?"No favourites yet.":"Nothing to rank.")+'</div>'; return; }
 
   var tots=all.map(function(i){ return DATA[i].tot; });
@@ -1043,8 +1057,11 @@ function paintRank(){
   }).sort(function(a,b){ return b.score-a.score || DATA[a.i].tot-DATA[b.i].tot; });
 
   var on=RKF.filter(function(f){ return RKON[f.k]; });
+  var off=STAT.filter(function(st){ return !RKST[st]; });
   document.getElementById("rkmeta").textContent =
-    live.length+" listings \u00b7 " + (on.length ? on.map(function(f){return f.label.toLowerCase();}).join(" + ") : "no factors on");
+    live.length+" of "+all.length+" \u00b7 scored on "
+    + (on.length ? on.map(function(f){return f.label.toLowerCase();}).join(" + ") : "nothing")
+    + (off.length ? " \u00b7 hiding "+off.map(function(st){return (LBL[st]||st).toLowerCase();}).join(", ") : "");
 
   var h='<div class="rkwrap"><div class="rkhead"><span>Best first. Tap a row to open it on the map.</span></div>';
   rows.forEach(function(r,n){
@@ -1066,17 +1083,20 @@ function paintRank(){
      + '<div class="rksc"><b>'+r.score+'</b><span>score</span></div>'
      + '</div>';
   });
-  h+='<div id="rkhow"><b>How this is scored.</b> Price is ranked against the cheapest and dearest '
-   + 'listing you still have. Travel is the measured transit time to Stockholm C where one has been looked up, '
-   + 'scored against a 90 minute worst case; anything not yet measured falls back to a straight-line estimate, written with a ~. Contact scores full marks '
-   + 'when the landlord replied last, 80% when you did, nothing if the thread is silent. Whether a viewing '
-   + 'exists is shown on each row but deliberately not scored — you booked it, so scoring it would only rank '
-   + 'your own past choices. Turn a factor off above and the rest re-weight to fill it.</div></div>';
+  h+='<div id="rkhow"><b>How this is scored.</b> Only two things count, and both are true of the flat '
+   + 'itself: price, ranked against the cheapest and dearest listing you still have, and travel, the measured '
+   + '9am transit time to Stockholm C scored against a 90 minute worst case (anything not yet measured falls '
+   + 'back to a straight-line estimate, written with a ~). '
+   + '<b>Where the conversation has got to is a filter, not a score.</b> Whether they replied and whether a '
+   + 'viewing is booked say more about what you have chased than about the flat, so they narrow the list '
+   + 'instead of quietly moving the numbers — a score means the same thing whatever you filter to.</div></div>';
   body.innerHTML=h;
 }
 document.getElementById("rkw").onclick=function(ev){
   var f=ev.target.closest("[data-rkfav]");
   if(f){ RKFAV=!RKFAV; paintRank(); return; }
+  var st=ev.target.closest("[data-rkst]");
+  if(st){ var k=st.getAttribute("data-rkst"); RKST[k]=!RKST[k]; paintRank(); return; }
   var c=ev.target.closest("[data-rk]"); if(!c) return;
   RKON[c.getAttribute("data-rk")]=!RKON[c.getAttribute("data-rk")];
   paintRank();
