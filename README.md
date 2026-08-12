@@ -51,6 +51,18 @@ Favourites and notes live in the browser's `localStorage`, so they're per-device
 what you star on the live site is separate from what you star opening the file locally, and
 neither is part of the repo. Un-starring keeps the note, so re-starring brings it back.
 
+### Getting them onto another device
+
+Two routes, because `localStorage` doesn't sync and Chrome won't do it for you:
+
+- **Seeded from the data.** A listing carrying `seedFav` / `seedNote` / `vw` applies them once
+  on first load, then the device owns them. This is how the laptop's favourites reach the phone,
+  and the daily sweep keeps it current by writing browser state back into the data.
+- **The Sync button** in the top bar. It shows a code containing everything this browser holds —
+  favourites, notes, viewings, removals, dismissed to-dos. Copy it, paste it into the same box on
+  the other device, and Apply. Importing **merges**: it only ever adds, never deletes, so pasting
+  a stale code cannot wipe newer work.
+
 ### Why travel time is a link, not a number
 
 Showing a real door-to-door transit time in the page needs a routing API (Google Directions,

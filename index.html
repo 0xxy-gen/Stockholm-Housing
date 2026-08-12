@@ -35,6 +35,23 @@ body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
 ::selection{background:var(--accent-soft);color:var(--text)}
 #nav .sp{flex:1}
 #nav #srcline{margin:0;font-size:11.5px;color:var(--text-3);white-space:nowrap}
+#syncbtn{flex:0 0 auto;padding:6px 11px;border:1px solid var(--border-2);background:var(--surface-2);
+  color:var(--text-2);border-radius:var(--r-m);font-size:12px;font-weight:600;cursor:pointer;min-height:32px}
+#syncbtn:hover{background:var(--surface-3);color:var(--text)}
+#sdlg{position:fixed;inset:0;background:rgba(10,12,16,.55);display:none;align-items:center;justify-content:center;z-index:140;padding:20px}
+#sdlg.on{display:flex}
+#sdlg .box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-l);box-shadow:var(--sh-2);max-width:520px;width:100%;padding:20px 22px}
+#sdlg h3{margin:0 0 6px;font-size:16px;font-weight:650}
+#sdlg p{margin:0 0 12px;font-size:12.5px;line-height:1.5;color:var(--text-2)}
+#sdlg textarea{width:100%;min-height:130px;resize:vertical;padding:10px;border:1px solid var(--border-2);
+  background:var(--surface-2);border-radius:var(--r-m);font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);outline:none}
+#sdlg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+#sdlg .row{display:flex;gap:9px;margin-top:14px;align-items:center;flex-wrap:wrap}
+#sdlg .row .sp{flex:1}
+#sdlg .row button{padding:8px 15px;border-radius:var(--r-m);font-size:12.5px;font-weight:600;cursor:pointer;
+  border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-2)}
+#sdlg .row button.pri{background:var(--accent);border-color:transparent;color:var(--accent-fg)}
+#sdlg .msg{font-size:12px;font-weight:600;color:var(--c-them)}
 #content{flex:1;display:flex;min-height:0;position:relative}
 button,input,select{font:inherit;color:inherit}
 ::-webkit-scrollbar{width:10px;height:10px}
@@ -486,6 +503,7 @@ button,input,select{font:inherit;color:inherit}
   </nav>
   <div class="sp"></div>
   <p id="srcline"></p>
+  <button id="syncbtn" title="Move favourites, notes and viewings between devices">Sync</button>
 </header>
 <div id="content">
 <aside id="side">
@@ -550,6 +568,19 @@ button,input,select{font:inherit;color:inherit}
   </div>
   <div id="vwbody"></div>
 </div>
+
+<div id="sdlg"><div class="box">
+  <h3>Move this device's data</h3>
+  <p>Favourites, notes, viewings and removals are stored in this browser only. Copy the code
+     below and paste it into the same box on your other device to carry them across.</p>
+  <textarea id="sdtext" spellcheck="false"></textarea>
+  <div class="row">
+    <button id="sdcopy">Copy</button>
+    <button id="sdapply" class="pri">Apply pasted code</button>
+    <span class="sp"></span><span class="msg" id="sdmsg"></span>
+    <button id="sdclose">Close</button>
+  </div>
+</div></div>
 
 <div id="vdlg"><div class="box">
   <h3 id="vdh">Add viewing</h3>
@@ -1189,6 +1220,45 @@ function viewingsBlock(i){
   return h;
 }
 
+/* ---------- moving browser state between devices ---------- */
+var SKEYS=["qasaFav","qasaNotes","qasaViewings","qasaDeleted","qasaTodoDone","qasaSeeded"];
+function syncExport(){
+  var o={};
+  SKEYS.forEach(function(k){ try{ o[k]=JSON.parse(localStorage.getItem(k)||"{}"); }catch(e){ o[k]={}; } });
+  return JSON.stringify(o);
+}
+function syncImport(txt){
+  var o;
+  try{ o=JSON.parse(txt); }catch(e){ return "That does not look like a valid code."; }
+  if(!o || typeof o!=="object") return "That does not look like a valid code.";
+  var n=0;
+  SKEYS.forEach(function(k){
+    if(!o[k] || typeof o[k]!=="object") return;
+    var cur={}; try{ cur=JSON.parse(localStorage.getItem(k)||"{}"); }catch(e){}
+    for(var id in o[k]){ if(!(id in cur)) n++; cur[id]=o[k][id]; }   /* merge, never drop */
+    try{ localStorage.setItem(k, JSON.stringify(cur)); }catch(e){}
+  });
+  return n===0 ? "Nothing new to add — this device was already up to date." : ("Added "+n+" item"+(n===1?"":"s")+". Reloading...");
+}
+document.getElementById("syncbtn").onclick=function(){
+  document.getElementById("sdtext").value=syncExport();
+  document.getElementById("sdmsg").textContent="";
+  document.getElementById("sdlg").className="on";
+};
+document.getElementById("sdclose").onclick=function(){ document.getElementById("sdlg").className=""; };
+document.getElementById("sdlg").onclick=function(ev){ if(ev.target===this) this.className=""; };
+document.getElementById("sdcopy").onclick=function(){
+  var t=document.getElementById("sdtext"); t.select();
+  var ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+  if(navigator.clipboard) navigator.clipboard.writeText(t.value).catch(function(){});
+  document.getElementById("sdmsg").textContent = "Copied";
+};
+document.getElementById("sdapply").onclick=function(){
+  var msg=syncImport(document.getElementById("sdtext").value);
+  document.getElementById("sdmsg").textContent=msg;
+  if(/^Added/.test(msg)) setTimeout(function(){ location.reload(); }, 900);
+};
+
 /* ---------- confirm dialog ---------- */
 var dlgCb=null;
 function confirmDialog(title, msgHtml, okLabel, cb){
@@ -1738,7 +1808,7 @@ document.getElementById("reset").onclick=function(){
 /* ---------- map interaction ---------- */
 /* One set of pointer handlers covers mouse, trackpad and touch. touch-action:none on #map
    stops the browser stealing the gesture to scroll or zoom the page. */
-function inUI(t){ return t && t.closest && t.closest("#card,#lb,#zoom,#legend,#hint,#dlg,#vdlg"); }
+function inUI(t){ return t && t.closest && t.closest("#card,#lb,#zoom,#legend,#hint,#dlg,#vdlg,#sdlg"); }
 var drag=null, PTR={}, ptrCount=0, pinch=null;
 function ptrList(){ var a=[]; for(var k in PTR) a.push(PTR[k]); return a; }
 function pinchDist(){ var a=ptrList(); return Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y); }
@@ -1823,7 +1893,8 @@ mapEl.addEventListener("dblclick", function(e){
   zoomTo(Math.floor(zf+1e-6)+1, e.clientX-r.left, e.clientY-r.top);
 });
 window.addEventListener("keydown", function(e){
-  if(e.key==="Escape"){ if(document.getElementById("vdlg").className) closeViewing();
+  if(e.key==="Escape"){ if(document.getElementById("sdlg").className) document.getElementById("sdlg").className="";
+    else if(document.getElementById("vdlg").className) closeViewing();
     else if(dlgCb!==null||document.getElementById("dlg").className) closeDialog();
     else if(document.getElementById("lb").className) lbClose(); else if(spider){ spider=null; drawMarkers(); } else closeCard(); }
 });
