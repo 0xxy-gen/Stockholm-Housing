@@ -1823,7 +1823,9 @@ function pinchCentre(){
 mapEl.addEventListener("pointerdown", function(e){
   if(inUI(e.target)) return;
   PTR[e.pointerId]={x:e.clientX,y:e.clientY}; ptrCount++;
-  try{ mapEl.setPointerCapture(e.pointerId); }catch(err){}
+  /* Deliberately NOT setPointerCapture: capturing to #map retargets pointerup, so the
+     browser fires click on the map instead of the marker and tapping a pin does nothing.
+     Moves and releases are watched on window instead, as the old mouse handlers did. */
   if(ptrCount===1){
     drag={x:e.clientX,y:e.clientY,ox:originX,oy:originY,moved:false,target:e.target};
     mapEl.classList.add("drag");
@@ -1833,7 +1835,7 @@ mapEl.addEventListener("pointerdown", function(e){
     pinch={d0:pinchDist(), zf0:zf};
   }
 });
-mapEl.addEventListener("pointermove", function(e){
+window.addEventListener("pointermove", function(e){
   if(!(e.pointerId in PTR)) return;
   PTR[e.pointerId]={x:e.clientX,y:e.clientY};
   if(pinch && ptrCount>=2){
@@ -1863,8 +1865,8 @@ function endPointer(e){
   }
   if(ptrCount===0){ drag=null; mapEl.classList.remove("drag"); drawTiles(); }
 }
-mapEl.addEventListener("pointerup", endPointer);
-mapEl.addEventListener("pointercancel", endPointer);
+window.addEventListener("pointerup", endPointer);
+window.addEventListener("pointercancel", endPointer);
 
 function zoomTo(target,cx,cy){ animateZoom(target,cx,cy); }
 document.getElementById("zi").onclick=function(){ zoomTo(Math.floor(zf+1e-6)+1); };
