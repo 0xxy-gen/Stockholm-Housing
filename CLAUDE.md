@@ -52,8 +52,25 @@ mouse events, so touch and mouse share one path — keep it that way when adding
 
 ## Browser state
 
-Favourites, notes, viewings and removed listings live in `localStorage`, per-origin. Anything
-that must reach every device belongs in the data file instead, via the seed fields.
+Favourites, notes, viewings, removed listings and dismissed to-dos live in `localStorage`,
+per-origin and per-device. Chrome does not sync it, so anything that must reach the phone
+belongs in the data file instead, via the seed fields.
+
+### Syncing browser state back into the data
+
+Every sweep, after updating statuses, promote the live site's browser state into `DATA` so all
+devices converge. Read `localStorage` on https://0xxy-gen.github.io/Stockholm-Housing/ and:
+
+- `qasaFav` → set `seedFav:1` on every favourited listing, and **remove** `seedFav` from any
+  listing no longer favourited. Otherwise un-starring on the laptop leaves the phone starred.
+- `qasaNotes` → set `seedNote` to the current text; remove it when the note is gone.
+- `qasaViewings` → merge any hand-added entry into that listing's `vw`, matching on date and
+  proposed-ness so nothing duplicates.
+- `qasaDeleted` → do **not** delete anything. Name the listings in the summary and let the user
+  decide; removal from the data is theirs to ask for.
+
+The laptop is the source of truth for this. Changes made on the phone are not visible to the
+sweep and will be overwritten by it — say so if it ever matters.
 
 When testing in the user's browser, clear any `qasaFav` / `qasaNotes` / `qasaViewings` /
 `qasaSeeded` / `qasaDeleted` keys you wrote afterwards — that is the user's real data.
