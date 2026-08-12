@@ -991,13 +991,16 @@ function noteBlock(i,k,d){
    actually talking to you, and whether you have a viewing. Each is scored 0-1, then weighted.
    Every factor can be switched off, and the weights re-normalise over whatever is left, so the
    score always reads out of 100 and you can see which listing wins on your own terms. */
+/* Deliberately no "viewing booked" factor. A viewing exists because you chased it, so scoring
+   it just rewards what you already prioritised and pushes down the leads that most need
+   attention. Booked viewings lead the Today screen and have their own tab; this view is for
+   deciding what to chase next. Whether a viewing exists is still shown on each row as context. */
 var RKF=[
   {k:"price",  label:"Price",    w:0.30, c:"var(--c-fav)"},
   {k:"dist",   label:"Travel",   w:0.20, c:"var(--c-them)"},
-  {k:"talk",   label:"Contact",  w:0.25, c:"var(--c-me)"},
-  {k:"view",   label:"Viewing",  w:0.25, c:"var(--accent)"}
+  {k:"talk",   label:"Contact",  w:0.25, c:"var(--c-me)"}
 ];
-var RKON={price:1,dist:1,talk:1,view:1}, RKFAV=false;
+var RKON={price:1,dist:1,talk:1}, RKFAV=false;
 
 function rkParts(d, lo, hi){
   var p = (hi>lo) ? 1-((d.tot-lo)/(hi-lo)) : 1;          /* cheapest = 1 */
@@ -1066,8 +1069,9 @@ function paintRank(){
   h+='<div id="rkhow"><b>How this is scored.</b> Price is ranked against the cheapest and dearest '
    + 'listing you still have. Travel is the measured transit time to Stockholm C where one has been looked up, '
    + 'scored against a 90 minute worst case; anything not yet measured falls back to a straight-line estimate, written with a ~. Contact scores full marks '
-   + 'when the landlord replied last, 80% when you did, nothing if the thread is silent. Viewing is full marks '
-   + 'when one is booked, half when one is proposed. Turn a factor off above and the rest re-weight to fill it.</div></div>';
+   + 'when the landlord replied last, 80% when you did, nothing if the thread is silent. Whether a viewing '
+   + 'exists is shown on each row but deliberately not scored — you booked it, so scoring it would only rank '
+   + 'your own past choices. Turn a factor off above and the rest re-weight to fill it.</div></div>';
   body.innerHTML=h;
 }
 document.getElementById("rkw").onclick=function(ev){
