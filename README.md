@@ -35,6 +35,25 @@ it's there, and one primary action — Open chat for a call or a reply, Directio
   Maps transit directions for the real journey.
 - **Dark mode** — follows your OS setting, map tiles included.
 
+## Ranking
+
+The **Ranking** tab answers the question the rest of the app can't: which of these is actually
+the best lead. Every listing is scored out of 100 on four things:
+
+| Factor | Weight | Full marks when |
+| --- | --- | --- |
+| Price | 30% | It's the cheapest listing you still have |
+| Distance | 20% | It's at Stockholm C (straight-line proxy, capped at 25 km) |
+| Contact | 25% | The landlord replied last (80% if you did, 0 if the thread is silent) |
+| Viewing | 25% | One is booked (50% if one is proposed) |
+
+Each row shows its four component bars, so a high score is never a black box — you can see
+whether something ranks well because it's cheap or because it's the only one with a viewing.
+
+Any factor can be switched off from the header, and the remaining weights re-normalise so the
+score still reads out of 100. Turning price off shows which leads have the most momentum
+regardless of cost; leaving only price and distance ranks the raw property.
+
 ## Favourites and notes
 
 The **Favourites** tab (top-left, next to Map) is a two-pane view: a scrolling list of starred
