@@ -43,7 +43,7 @@ the best lead. Every listing is scored out of 100 on four things:
 | Factor | Weight | Full marks when |
 | --- | --- | --- |
 | Price | 30% | It's the cheapest listing you still have |
-| Distance | 20% | It's at Stockholm C (straight-line proxy, capped at 25 km) |
+| Travel | 20% | It's at Stockholm C. Uses the measured transit time where one has been looked up, capped at an hour; otherwise a straight-line estimate, always shown with a `~` |
 | Contact | 25% | The landlord replied last (80% if you did, 0 if the thread is silent) |
 | Viewing | 25% | One is booked (50% if one is proposed) |
 

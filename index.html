@@ -561,7 +561,7 @@ button,input,select{font:inherit;color:inherit}
         <option value="-sq">Size: large to small</option>
         <option value="ppm">Price per m&sup2;: low to high</option>
         <option value="st">Status</option>
-        <option value="dist">Distance to Stockholm C</option>
+        <option value="dist">Closest to Stockholm C</option>
         <option value="a">Address A&ndash;Z</option>
       </select></div>
       <button id="ftog" aria-expanded="false">Filters <span class="cnt" id="fcnt">0</span>
@@ -770,18 +770,33 @@ function distKm(d){
 }
 /* Straight-line km can badly misrepresent Stockholm travel — a rail suburb 19 km out beats
    a bus-only pocket at 8. Bucket it into a rough door-to-door range and say it is rough. */
+/* d.mins is a real door-to-door transit time measured from Google Maps and stored in the data.
+   Where it exists it is used verbatim; everything else falls back to the straight-line band,
+   always written with a "~" so a guess never reads like a measurement. */
+function travelMins(d){ return typeof d.mins==="number" ? d.mins : null; }
 function distLabel(d){
+  var m=travelMins(d);
+  if(m!=null) return m>=60 ? (Math.floor(m/60)+" h"+(m%60?" "+(m%60)+" min":"")) : (m+" min");
   var k=distKm(d);
   if(k==null) return "";
   if(k<2)  return "~15 min";
   if(k<5)  return "~20-30 min";
   if(k<10) return "~30-40 min";
   if(k<20) return "~40-55 min";
-  return "1 hr+";
+  return "~1 hr+";
 }
 function distTitle(d){
+  var m=travelMins(d);
+  if(m!=null) return "Measured door-to-door transit time to Stockholm C, from Google Maps.";
   var k=distKm(d);
-  return k==null ? "" : "Rough transit time to Stockholm C, estimated from "+(k<10?k.toFixed(1):Math.round(k))+" km straight line. Use Directions for the real journey.";
+  return k==null ? "" : "Estimated from "+(k<10?k.toFixed(1):Math.round(k))+" km straight line, not measured. Use Directions for the real journey.";
+}
+/* 0 = an hour or more away, 1 = at the station */
+function travelScore(d){
+  var m=travelMins(d);
+  if(m!=null) return 1-Math.min(m,60)/60;
+  var k=distKm(d);
+  return k==null ? 0 : 1-Math.min(k,25)/25;
 }
 /* The cu ids exported from Qasa do not match the real threads, so Qasa listings link to the
    inbox rather than to a confidently wrong conversation. */
@@ -973,7 +988,7 @@ function noteBlock(i,k,d){
    score always reads out of 100 and you can see which listing wins on your own terms. */
 var RKF=[
   {k:"price",  label:"Price",    w:0.30, c:"var(--c-fav)"},
-  {k:"dist",   label:"Distance", w:0.20, c:"var(--c-them)"},
+  {k:"dist",   label:"Travel",   w:0.20, c:"var(--c-them)"},
   {k:"talk",   label:"Contact",  w:0.25, c:"var(--c-me)"},
   {k:"view",   label:"Viewing",  w:0.25, c:"var(--accent)"}
 ];
@@ -981,8 +996,7 @@ var RKON={price:1,dist:1,talk:1,view:1};
 
 function rkParts(d, lo, hi){
   var p = (hi>lo) ? 1-((d.tot-lo)/(hi-lo)) : 1;          /* cheapest = 1 */
-  var km = distKm(d);
-  var dist = km==null ? 0 : 1-Math.min(km,25)/25;         /* at the station = 1 */
+  var dist = travelScore(d);
   var st = statusKey(d.st);
   var talk = st==="Waiting on me" ? 1 : (st==="Waiting on them" ? 0.8 : 0);
   var vs = viewsOf(DATA.indexOf(d));
@@ -1042,7 +1056,8 @@ function paintRank(){
      + '</div>';
   });
   h+='<div id="rkhow"><b>How this is scored.</b> Price is ranked against the cheapest and dearest '
-   + 'listing you still have. Distance is a straight-line proxy capped at 25 km. Contact scores full marks '
+   + 'listing you still have. Travel is the measured transit time to Stockholm C where one has been looked up, '
+   + 'capped at an hour; anything not yet measured falls back to a straight-line estimate, written with a ~. Contact scores full marks '
    + 'when the landlord replied last, 80% when you did, nothing if the thread is silent. Viewing is full marks '
    + 'when one is booked, half when one is proposed. Turn a factor off above and the rest re-weight to fill it.</div></div>';
   body.innerHTML=h;
@@ -1589,7 +1604,7 @@ function sortedIdx(){
     "ppm": function(a,b){ return ppm(DATA[a])-ppm(DATA[b]); },
     "st": function(a,b){ var x=STAT.indexOf(statusKey(DATA[a].st))-STAT.indexOf(statusKey(DATA[b].st)); return x||DATA[a].tot-DATA[b].tot; },
     "a": function(a,b){ return DATA[a].a.localeCompare(DATA[b].a,"sv"); },
-    "dist": function(a,b){ var x=distKm(DATA[a]), y=distKm(DATA[b]); return (x==null?1e9:x)-(y==null?1e9:y); }
+    "dist": function(a,b){ return travelScore(DATA[b])-travelScore(DATA[a]); }
   }[sortBy];
   return idx.sort(cmp);
 }

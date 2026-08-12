@@ -50,6 +50,36 @@ One breakpoint at 760px (plus a 420px tweak) stacks the map above the list, turn
 card into a bottom sheet and makes favourites single-column. The map uses pointer events, not
 mouse events, so touch and mouse share one path — keep it that way when adding interactions.
 
+## Travel time to Stockholm C
+
+`mins` on a listing is a **measured** door-to-door public-transport time to Stockholm C. Where it
+exists the UI prints it exactly ("21 min"); where it does not, the UI falls back to a
+straight-line estimate always written with a `~`, and the Ranking view's Travel factor uses the
+same fallback. Never write a `~` estimate into `mins` — the tilde is the promise that a bare
+number was actually measured.
+
+Measuring one, in the user's Chrome:
+
+1. Navigate to
+   `https://www.google.com/maps/dir/?api=1&origin=<lat>,<lng>&destination=Stockholm%20Centralstation&travelmode=transit`
+   and wait ~7s.
+2. Take the left panel (the widest tall element with `left < 450`), find `"Copy link"`, and read
+   the **first** `N min` AFTER it. That is the first transit itinerary.
+   - Do **not** take the smallest number on the page. The mode bar above `"Copy link"` shows
+     driving, walking and cycling times too, and driving is always fastest — reading it would
+     silently record a car journey as a transit time.
+3. Store as an integer `mins`.
+
+**Only measure at a commute hour.** Google has no way to pin a departure time — the URL and the
+legacy `ttype`/`date`/`time` parameters are both stripped, so results are always "leave now". The
+08:47 sweep is therefore the right and only place to do this: at that hour "now" is a normal
+weekday morning. Measured at night you get night buses, which for central listings roughly
+doubles the real figure. If a sweep ever runs outside roughly 07:00-19:00 on a weekday, skip the
+measuring step entirely rather than recording a misleading number.
+
+Do about 15 listings per sweep, preferring ones with a live conversation, a viewing or a
+favourite, and re-measure anything older than a month.
+
 ## Browser state
 
 Favourites, notes, viewings, removed listings and dismissed to-dos live in `localStorage`,
