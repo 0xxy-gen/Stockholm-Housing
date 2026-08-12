@@ -245,6 +245,9 @@ button,input,select{font:inherit;color:inherit}
 .fdh .small{font-size:12px;color:var(--text-3);text-align:right;margin-top:3px}
 .fd .tags{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}
 .dpill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:550;background:var(--surface-3);color:var(--text-2);cursor:help}
+.scorechip{display:inline-flex;align-items:baseline;gap:4px;padding:1px 9px;border-radius:999px;cursor:help;
+  background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.scorechip b{font-size:9px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;opacity:.75}
 .nolisted{margin-top:9px;font-size:11.5px;color:var(--text-3);line-height:1.45}
 .kindchip{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:999px;font-size:10.5px;font-weight:650}
 .kindchip.call{background:color-mix(in srgb,var(--c-them) 16%,transparent);color:var(--c-them)}
@@ -1056,6 +1059,18 @@ function rkScore(parts){
   RKF.forEach(function(f){ if(RKON[f.k]){ tot+=parts[f.k]*f.w; wsum+=f.w; } });
   return wsum ? Math.round(tot/wsum*100) : 0;
 }
+function rkRange(){
+  var t=[]; DATA.forEach(function(d){ if(!isDeleted(d)) t.push(d.tot); });
+  return t.length ? {lo:Math.min.apply(null,t), hi:Math.max.apply(null,t)} : {lo:0,hi:1};
+}
+/* the number a card shows is the same one Ranking shows, factor toggles included */
+function scoreOf(i){ var r=rkRange(); return rkScore(rkParts(DATA[i], r.lo, r.hi)); }
+function scoreChip(i){
+  var on=RKF.filter(function(f){ return RKON[f.k]; }).map(function(f){ return f.label.toLowerCase(); });
+  if(!on.length) return "";
+  return '<span class="scorechip" title="Ranking score out of 100, on '+on.join(" and ")
+       + '. Open the Ranking tab for the breakdown.">'+scoreOf(i)+'<b>score</b></span>';
+}
 function rkNote(d, parts){
   var st=statusKey(d.st), vs=viewsOf(DATA.indexOf(d));
   var bits=[];
@@ -1174,6 +1189,7 @@ function tdRow(opts){
     +     '<span class="pill" style="--c:'+col(d.st)+'"><i></i>'+esc(LBL[statusKey(d.st)]||d.st)+'</span>'
     +     srcBadge(d.src)
     +     (!isCall && distLabel(d)?'<span class="dpill" title="'+esc(distTitle(d))+'">'+distLabel(d)+' to C</span>':'')
+    +     scoreChip(opts.i)
     +   '</div>'
     +   (opts.why?'<div class="why">'+esc(opts.why)+'</div>':'')
     +   '<div class="acts">'
@@ -1309,6 +1325,7 @@ function vCard(v, now){
     +     srcBadge(d.src)
     +     (!isCall && distLabel(d)?'<span class="dpill" title="'+esc(distTitle(d))+'">'+distLabel(d)+' to Stockholm C</span>':'')
     +     (v.a?'<span class="auto">from your messages</span>':'')
+    +     scoreChip(v.i)
     +   '</div>'
     +   '<div class="vfacts">'+factRows(facts).map(function(f){ return '<div><span>'+f[0]+'</span><em>'+f[1]+'</em></div>'; }).join("")+'</div>'
     +   (v.n?'<div class="vnote">'+esc(v.n)+'</div>':'')
@@ -1610,7 +1627,8 @@ function paintFavDetail(){
     +   (sq?' \u00b7 '+Math.round(d.tot/sq)+' kr/m\u00b2':'')+'</div></div></div>'
     + '<div class="tags"><span class="pill" style="--c:'+col(d.st)+'"><i></i>'+esc(LBL[st]||d.st)+'</span>'
     +   srcBadge(d.src)
-    +   (distLabel(d)?'<span class="dpill" title="'+esc(distTitle(d))+'">'+distLabel(d)+' to Stockholm C</span>':'')+'</div>';
+    +   (distLabel(d)?'<span class="dpill" title="'+esc(distTitle(d))+'">'+distLabel(d)+' to Stockholm C</span>':'')
+    +   scoreChip(i)+'</div>';
 
   if(d.im && d.im.length){
     h += '<img class="hero" id="fph" data-k="0" data-act="fbig" src="'+IMG(d.im[0],"1000x660")+'" alt="Photo of '+esc(d.a)+'"'+IMGERR+'>';
@@ -1818,7 +1836,7 @@ function card(i){
 
   var h = '<div class="ch"><button class="x" onclick="closeCard()" title="Close">&times;</button>'
         + '<h2>'+esc(d.a)+'</h2>'
-        + '<div class="sub">'+esc(d.ar)+' <span class="pill" style="--c:'+col(d.st)+'"><i></i>'+esc(LBL[s]||d.st)+'</span>'+srcBadge(d.src)+'</div></div>'
+        + '<div class="sub">'+esc(d.ar)+' <span class="pill" style="--c:'+col(d.st)+'"><i></i>'+esc(LBL[s]||d.st)+'</span>'+srcBadge(d.src)+scoreChip(i)+'</div></div>'
         + '<div class="cb">';
 
   if(d.im && d.im.length){

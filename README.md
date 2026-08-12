@@ -63,6 +63,11 @@ instead of quietly moving the numbers. Blending it in made the score unreadable 
 a talkative landlord both produced 80) and was circular, since you chose who to message and who
 to chase. Filter to the ones who replied, then read a score that means one thing.
 
+The score also appears as a chip on every listing card — the map detail card, the favourite, the
+viewing cards and the Today rows — so you never have to switch tabs to see where something
+stands. It is the same number the Ranking view shows, factor toggles included, so the two can
+never disagree.
+
 **Show** hides listings by conversation state — switch off *No reply yet* and you're looking only
 at live conversations — and **Favourites** narrows to starred ones. Scores never change when you
 filter; price is always ranked against every live listing.
