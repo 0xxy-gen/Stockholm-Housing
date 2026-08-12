@@ -44,6 +44,12 @@ during a sweep, and only add one when the user asks for it.
 `st` is one of `"Waiting on me"`, `"Waiting on them"`, `"No reply"`. Closed/rented listings are
 filtered out at runtime.
 
+## Layout
+
+One breakpoint at 760px (plus a 420px tweak) stacks the map above the list, turns the detail
+card into a bottom sheet and makes favourites single-column. The map uses pointer events, not
+mouse events, so touch and mouse share one path — keep it that way when adding interactions.
+
 ## Browser state
 
 Favourites, notes, viewings and removed listings live in `localStorage`, per-origin. Anything

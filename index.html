@@ -116,7 +116,7 @@ button,input,select{font:inherit;color:inherit}
 #nocoord:empty{display:none}
 
 /* ---------- map ---------- */
-#map{position:relative;flex:1;overflow:hidden;cursor:grab;background:var(--surface-3)}
+#map{position:relative;flex:1;overflow:hidden;cursor:grab;background:var(--surface-3);touch-action:none}
 #map.drag{cursor:grabbing}
 #layer{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
 #tiles img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-drag:none;filter:var(--tilef)}
@@ -391,6 +391,61 @@ button,input,select{font:inherit;color:inherit}
 #lb.show{display:flex}
 #lb img{max-width:90%;max-height:90%;border-radius:var(--r-m)}
 #lb .cl2{position:absolute;top:16px;right:24px;color:#fff;font-size:34px;line-height:1;cursor:pointer;opacity:.8}
+
+/* ---------- phones and narrow windows ---------- */
+@media (max-width:760px){
+  /* map on top at a usable height, then the toolbar and list beneath it */
+  #content{flex-direction:column}
+  #map{order:-1;flex:0 0 44vh;min-height:220px}
+  #side{width:auto;flex:1 1 auto;min-height:0;border-right:0;border-top:1px solid var(--border)}
+  #legend{display:none}
+  #hint{font-size:11px;padding:4px 10px}
+  #zoom button{width:38px;height:38px}
+
+  #nav{gap:10px;padding:0 12px;height:48px}
+  #nav #srcline{display:none}
+  #nav .brand{font-size:13.5px}
+  #tabs{flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{flex:1 0 auto;padding:5px 9px;font-size:12px;white-space:nowrap}
+
+  #tools{padding:12px 14px 10px}
+  #stats,#delbar{padding-left:14px;padding-right:14px}
+  #list li{padding:10px 14px}
+  #nocoord{padding:9px 14px}
+
+  /* the floating detail panel becomes a bottom sheet */
+  #card{left:0;right:0;bottom:0;top:auto;width:auto;max-height:78vh;
+        border-radius:var(--r-l) var(--r-l) 0 0;border-bottom:0}
+  #card .ch{border-radius:var(--r-l) var(--r-l) 0 0}
+
+  /* favourites: list above, detail below, both scrolling */
+  #fvbody{flex-direction:column}
+  #fvlist{width:auto;flex:0 0 auto;max-height:34vh;border-right:0;border-bottom:1px solid var(--border)}
+  #fvdetail{padding:16px 14px 32px}
+  .fdh{flex-direction:column;gap:6px}
+  .fdh .big,.fdh .small{text-align:left}
+  .fd .hero{height:210px}
+  .fd .facts{grid-template-columns:1fr}
+  .fd .acts .btn{min-width:0;flex:1 1 46%}
+
+  /* today and viewings: single column, roomier tap targets */
+  #tdbody,#vwbody{padding:16px 14px 32px}
+  .vfacts{grid-template-columns:1fr}
+  .vcard{gap:11px;padding:12px}
+  .vth{flex:0 0 48px;width:48px;height:48px}
+  .vtime{flex:0 0 50px;padding-right:10px}
+  .tdrow{gap:10px;padding:11px 12px}
+  .tdrow .when{flex:0 0 48px;padding-right:10px}
+  .tdrow .acts a,.tdrow .acts button,.vacts a,.vacts button{padding:7px 11px;font-size:12px}
+  #fvh{padding:11px 14px;gap:9px;flex-wrap:wrap}
+
+  #dlg .box,#vdlg .box{padding:16px 16px 18px}
+  #vdlg .two{flex-direction:column;gap:0}
+}
+@media (max-width:420px){
+  #nav .brand{display:none}
+  .tab b{display:none}
+}
 </style></head><body>
 <div id="dlg"><div class="box">
   <h3 id="dlgt"></h3><p id="dlgm"></p>
@@ -1492,7 +1547,8 @@ function select(i,pan){
     spider=null;
     if(zf<LABEL_Z){ zf=14; z=14; scale=1; tilesEl.innerHTML=""; }
     var p=proj(d.lat,d.lng,z);
-    originX=p.x-((mapEl.clientWidth-380)/2)/scale; originY=p.y-(mapEl.clientHeight/2)/scale;
+    var off = mapEl.clientWidth>760 ? (mapEl.clientWidth-380)/2 : mapEl.clientWidth/2;
+    originX=p.x-off/scale; originY=p.y-(mapEl.clientHeight/2)/scale;
     tilesEl.innerHTML=""; setTransform(); drawTiles(); drawMarkers();
   }
 }
@@ -1657,27 +1713,62 @@ document.getElementById("reset").onclick=function(){
 };
 
 /* ---------- map interaction ---------- */
-var drag=null;
-function inUI(t){ return t && t.closest && t.closest("#card,#lb,#zoom,#legend,#hint"); }
-mapEl.addEventListener("mousedown", function(e){
+/* One set of pointer handlers covers mouse, trackpad and touch. touch-action:none on #map
+   stops the browser stealing the gesture to scroll or zoom the page. */
+function inUI(t){ return t && t.closest && t.closest("#card,#lb,#zoom,#legend,#hint,#dlg,#vdlg"); }
+var drag=null, PTR={}, ptrCount=0, pinch=null;
+function ptrList(){ var a=[]; for(var k in PTR) a.push(PTR[k]); return a; }
+function pinchDist(){ var a=ptrList(); return Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y); }
+function pinchCentre(){
+  var a=ptrList(), r=mapEl.getBoundingClientRect();
+  return {x:(a[0].x+a[1].x)/2-r.left, y:(a[0].y+a[1].y)/2-r.top};
+}
+mapEl.addEventListener("pointerdown", function(e){
   if(inUI(e.target)) return;
-  drag={x:e.clientX,y:e.clientY,ox:originX,oy:originY,moved:false};
-  mapEl.classList.add("drag");
+  PTR[e.pointerId]={x:e.clientX,y:e.clientY}; ptrCount++;
+  try{ mapEl.setPointerCapture(e.pointerId); }catch(err){}
+  if(ptrCount===1){
+    drag={x:e.clientX,y:e.clientY,ox:originX,oy:originY,moved:false,target:e.target};
+    mapEl.classList.add("drag");
+  } else if(ptrCount===2){
+    drag=null; mapEl.classList.remove("drag");
+    if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=0; }
+    pinch={d0:pinchDist(), zf0:zf};
+  }
 });
-window.addEventListener("mousemove", function(e){
+mapEl.addEventListener("pointermove", function(e){
+  if(!(e.pointerId in PTR)) return;
+  PTR[e.pointerId]={x:e.clientX,y:e.clientY};
+  if(pinch && ptrCount>=2){
+    e.preventDefault();
+    var d=pinchDist();
+    if(d>4 && pinch.d0>4){
+      var c=pinchCentre();
+      setZoom(pinch.zf0 + Math.log(d/pinch.d0)/Math.LN2, c.x, c.y);
+    }
+    return;
+  }
   if(!drag) return;
+  e.preventDefault();
   originX=drag.ox-(e.clientX-drag.x)/scale; originY=drag.oy-(e.clientY-drag.y)/scale;
   if(Math.abs(e.clientX-drag.x)+Math.abs(e.clientY-drag.y)>3) drag.moved=true;
   setTransform();
 });
-window.addEventListener("mouseup", function(e){
-  if(!drag) return;
-  var moved=drag.moved; drag=null; mapEl.classList.remove("drag");
-  if(moved) drawTiles();
-  else if(!inUI(e.target) && e.target.closest && !e.target.closest(".mk,.cl") && spider){ spider=null; drawMarkers(); }
-});
+function endPointer(e){
+  if(!(e.pointerId in PTR)) return;
+  delete PTR[e.pointerId]; ptrCount=Math.max(0, ptrCount-1);
+  if(ptrCount<2){ pinch=null; }
+  if(ptrCount===0 && drag){
+    var moved=drag.moved, tgt=drag.target; drag=null;
+    mapEl.classList.remove("drag");
+    if(moved) drawTiles();
+    else if(spider && tgt && tgt.closest && !inUI(tgt) && !tgt.closest(".mk,.cl")){ spider=null; drawMarkers(); }
+  }
+  if(ptrCount===0){ drag=null; mapEl.classList.remove("drag"); drawTiles(); }
+}
+mapEl.addEventListener("pointerup", endPointer);
+mapEl.addEventListener("pointercancel", endPointer);
 
-/* Buttons and double-click ease between whole levels; the wheel drives zf directly. */
 function zoomTo(target,cx,cy){ animateZoom(target,cx,cy); }
 document.getElementById("zi").onclick=function(){ zoomTo(Math.floor(zf+1e-6)+1); };
 document.getElementById("zo").onclick=function(){ zoomTo(Math.ceil(zf-1e-6)-1); };

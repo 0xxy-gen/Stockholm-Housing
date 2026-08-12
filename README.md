@@ -129,11 +129,20 @@ ones are assigned a stable colour from a fallback palette.
 Listing data is embedded directly in the HTML — a point-in-time snapshot, not a live feed.
 Nothing is fetched from Qasa at runtime.
 
+## On a phone
+
+Below 760px the layout stacks: the map takes the top ~44% of the screen with the toolbar and
+listing list scrolling beneath it, the detail card becomes a bottom sheet, favourites go
+single-column, and the nav compacts (the wordmark drops below 420px).
+
+The map takes touch: one finger drags, two fingers pinch to zoom, and `touch-action: none`
+stops the browser hijacking the gesture to scroll the page. It is all one set of pointer
+handlers, so mouse, trackpad and touch go through the same code.
+
 ## Not done yet
 
-The map is mouse-only: no touch panning or pinch-zoom, and the layout assumes a wide window,
-so it isn't usable on a phone. Markers aren't keyboard-reachable and carry no screen-reader
-labels.
+Markers aren't keyboard-reachable and carry no screen-reader labels; status is conveyed on the
+map by colour alone.
 
 ## Credits
 
