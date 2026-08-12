@@ -44,12 +44,16 @@ the best lead. Every listing is scored out of 100 on four things:
 | Factor | Weight | Full marks when |
 | --- | --- | --- |
 | Price | 30% | It's the cheapest listing you still have |
-| Travel | 20% | It's at Stockholm C. Uses the measured transit time where one has been looked up, capped at an hour; otherwise a straight-line estimate, always shown with a `~` |
+| Travel | 20% | It's at Stockholm C. Uses the measured 9am transit time where one has been looked up, scored against a 90-minute worst case; otherwise a straight-line estimate, always shown with a `~` |
 | Contact | 25% | The landlord replied last (80% if you did, 0 if the thread is silent) |
 | Viewing | 25% | One is booked (50% if one is proposed) |
 
 Each row shows its four component bars, so a high score is never a black box — you can see
 whether something ranks well because it's cheap or because it's the only one with a viewing.
+
+Favourites are starred and tinted in the list, and **Favourites only** narrows it to them —
+useful when 95 rows bury the one you care about. Scores are always computed against every live
+listing, so filtering the view never changes a number.
 
 Any factor can be switched off from the header, and the remaining weights re-normalise so the
 score still reads out of 100. Turning price off shows which leads have the most momentum

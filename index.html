@@ -291,6 +291,8 @@ button,input,select{font:inherit;color:inherit}
 .rkwrap{max-width:820px;margin:0 auto}
 #rkw{display:flex;gap:6px;flex-wrap:wrap}
 #rkw .chip{padding:5px 10px;font-size:11.5px}
+.rkfav{color:var(--c-fav);font-size:13px;margin-left:5px}
+.rkrow.fav{background:linear-gradient(90deg,color-mix(in srgb,var(--c-fav) 7%,var(--surface)),var(--surface) 40%)}
 .rkhead{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;font-size:12px;color:var(--text-3)}
 .rkrow{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);
   border-radius:var(--r-l);padding:11px 14px;margin-bottom:8px;box-shadow:var(--sh-1);cursor:pointer}
@@ -792,10 +794,12 @@ function distTitle(d){
   var k=distKm(d);
   return k==null ? "" : "Estimated from "+(k<10?k.toFixed(1):Math.round(k))+" km straight line, not measured. Use Directions for the real journey.";
 }
-/* 0 = an hour or more away, 1 = at the station */
+/* 1 = at the station, 0 = 90 minutes or worse. The cap is 90 rather than 60 so that a long
+   but liveable commute still scores something and stays distinguishable from a hopeless one. */
+var TRAVEL_CAP=90;
 function travelScore(d){
   var m=travelMins(d);
-  if(m!=null) return 1-Math.min(m,60)/60;
+  if(m!=null) return 1-Math.min(m,TRAVEL_CAP)/TRAVEL_CAP;
   var k=distKm(d);
   return k==null ? 0 : 1-Math.min(k,25)/25;
 }
@@ -993,7 +997,7 @@ var RKF=[
   {k:"talk",   label:"Contact",  w:0.25, c:"var(--c-me)"},
   {k:"view",   label:"Viewing",  w:0.25, c:"var(--accent)"}
 ];
-var RKON={price:1,dist:1,talk:1,view:1};
+var RKON={price:1,dist:1,talk:1,view:1}, RKFAV=false;
 
 function rkParts(d, lo, hi){
   var p = (hi>lo) ? 1-((d.tot-lo)/(hi-lo)) : 1;          /* cheapest = 1 */
@@ -1018,14 +1022,17 @@ function rkNote(d, parts){
 }
 
 function paintRank(){
-  var live=[]; DATA.forEach(function(d,i){ if(!isDeleted(d)) live.push(i); });
+  /* price is normalised against every live listing, never the filtered subset — a score must
+     not move just because you narrowed the view */
+  var all=[]; DATA.forEach(function(d,i){ if(!isDeleted(d)) all.push(i); });
+  var live=all.filter(function(i){ return !RKFAV || isFav(DATA[i]); });
   var body=document.getElementById("rkbody");
   document.getElementById("rkw").innerHTML = RKF.map(function(f){
     return '<button class="chip" data-rk="'+f.k+'" aria-pressed="'+(RKON[f.k]?"true":"false")+'" style="--c:'+f.c+'"><i></i>'+f.label+'</button>';
-  }).join("");
-  if(!live.length){ body.innerHTML='<div id="rkempty">Nothing to rank.</div>'; return; }
+  }).join("") + '<button class="chip" data-rkfav="1" aria-pressed="'+(RKFAV?"true":"false")+'" style="--c:var(--c-fav)"><i></i>Favourites only</button>';
+  if(!live.length){ body.innerHTML='<div id="rkempty">'+(RKFAV?"No favourites yet.":"Nothing to rank.")+'</div>'; return; }
 
-  var tots=live.map(function(i){ return DATA[i].tot; });
+  var tots=all.map(function(i){ return DATA[i].tot; });
   var lo=Math.min.apply(null,tots), hi=Math.max.apply(null,tots);
   var rows=live.map(function(i){
     var parts=rkParts(DATA[i], lo, hi);
@@ -1039,11 +1046,11 @@ function paintRank(){
   var h='<div class="rkwrap"><div class="rkhead"><span>Best first. Tap a row to open it on the map.</span></div>';
   rows.forEach(function(r,n){
     var d=DATA[r.i], sq=sqOf(d);
-    h+='<div class="rkrow'+(n<3?" top":"")+'" data-rki="'+r.i+'">'
+    h+='<div class="rkrow'+(n<3?" top":"")+(isFav(d)?" fav":"")+'" data-rki="'+r.i+'">'
      + '<div class="rkn">'+(n+1)+'</div>'
      + ((d.im&&d.im.length)?'<img class="rkth" src="'+IMG(d.im[0],"160x160")+'" alt="" loading="lazy">':'<span class="rkth"></span>')
      + '<div class="rkbd">'
-     +   '<div class="r1"><h4>'+esc(d.a)+'</h4><span class="pr">'+fmt(d.tot)+' SEK</span></div>'
+     +   '<div class="r1"><h4>'+esc(d.a)+(isFav(d)?'<span class="rkfav">\u2605</span>':'')+'</h4><span class="pr">'+fmt(d.tot)+' SEK</span></div>'
      +   '<div class="r2">'+esc(d.ar)+(sq?' \u00b7 '+sq+' m\u00b2':'')+(distLabel(d)?' \u00b7 '+distLabel(d)+' to C':'')+' \u00b7 '+rkNote(d,r.parts)+'</div>'
      +   '<div class="rkbars">'
      +     RKF.filter(function(f){return RKON[f.k];}).map(function(f){
@@ -1058,15 +1065,16 @@ function paintRank(){
   });
   h+='<div id="rkhow"><b>How this is scored.</b> Price is ranked against the cheapest and dearest '
    + 'listing you still have. Travel is the measured transit time to Stockholm C where one has been looked up, '
-   + 'capped at an hour; anything not yet measured falls back to a straight-line estimate, written with a ~. Contact scores full marks '
+   + 'scored against a 90 minute worst case; anything not yet measured falls back to a straight-line estimate, written with a ~. Contact scores full marks '
    + 'when the landlord replied last, 80% when you did, nothing if the thread is silent. Viewing is full marks '
    + 'when one is booked, half when one is proposed. Turn a factor off above and the rest re-weight to fill it.</div></div>';
   body.innerHTML=h;
 }
 document.getElementById("rkw").onclick=function(ev){
+  var f=ev.target.closest("[data-rkfav]");
+  if(f){ RKFAV=!RKFAV; paintRank(); return; }
   var c=ev.target.closest("[data-rk]"); if(!c) return;
-  var k=c.getAttribute("data-rk");
-  RKON[k]=!RKON[k];
+  RKON[c.getAttribute("data-rk")]=!RKON[c.getAttribute("data-rk")];
   paintRank();
 };
 document.getElementById("rkbody").onclick=function(ev){
