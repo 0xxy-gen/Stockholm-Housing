@@ -64,18 +64,25 @@ Measuring one, in the user's Chrome:
    `https://www.google.com/maps/dir/?api=1&origin=<lat>,<lng>&destination=Stockholm%20Centralstation&travelmode=transit`
    and wait ~7s.
 2. Take the left panel (the widest tall element with `left < 450`), find `"Copy link"`, and read
-   the **first** `N min` AFTER it. That is the first transit itinerary.
+   the **first** duration AFTER it. That is the first transit itinerary. Match
+   `/(?:(\d+)\s*hrs?\s*)?(\d{1,3})\s*min/` — Google writes "1 hr 3 min", so a pattern that only
+   allows `h` silently records that as 3.
    - Do **not** take the smallest number on the page. The mode bar above `"Copy link"` shows
      driving, walking and cycling times too, and driving is always fastest — reading it would
      silently record a car journey as a transit time.
 3. Store as an integer `mins`.
 
-**Only measure at a commute hour.** Google has no way to pin a departure time — the URL and the
-legacy `ttype`/`date`/`time` parameters are both stripped, so results are always "leave now". The
-08:47 sweep is therefore the right and only place to do this: at that hour "now" is a normal
-weekday morning. Measured at night you get night buses, which for central listings roughly
-doubles the real figure. If a sweep ever runs outside roughly 07:00-19:00 on a weekday, skip the
-measuring step entirely rather than recording a misleading number.
+**Pin the departure time to 09:00.** The `?api=1` URL always means "leave now", which at night
+returns night buses and roughly doubles the real figure. Use the long form instead, which does
+carry a departure timestamp:
+
+```
+https://www.google.com/maps/dir/<lat>,<lng>/Stockholm+C,+Centralplan+15,+111+20+Stockholm/data=!3m2!1e3!4b1!4m13!4m12!1m0!1m5!1m1!1s0x465f9d60f602f26d:0x97c553dab672ba3d!2m2!1d18.0582377!2d59.3301476!2m3!6e0!7e2!8j<EPOCH>!3e3
+```
+
+`!8j<EPOCH>` is read as **naive local time**: pass the epoch of 09:00 UTC on the target weekday to
+get 09:00 Stockholm. Confirm the panel reads "Depart at" and a 9-something departure before
+trusting the number. Note `!2m3!6e0!7e2` must precede it — `!8j` appended after `!3e3` is dropped.
 
 Do about 15 listings per sweep, preferring ones with a live conversation, a viewing or a
 favourite, and re-measure anything older than a month.

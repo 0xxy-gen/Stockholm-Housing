@@ -30,9 +30,10 @@ it's there, and one primary action — Open chat for a call or a reply, Directio
 - **Filters** — status, source, favourites only, max total rent, min size. The Filters button
   shows how many are active; "Clear all filters" resets them.
 - **Price labels** — rents appear on the markers once you zoom in far enough.
-- **Distance to Stockholm C** — a rough transit-time band (never a false-precision kilometre;
-  hover for the straight-line figure it came from), sortable, plus a button that opens Google
-  Maps transit directions for the real journey.
+- **Travel to Stockholm C** — the real door-to-door public-transport time, measured from Google
+  Maps for a 09:00 weekday departure and shown on every listing card. Anything not yet measured
+  falls back to a straight-line estimate, always written with a `~` so a guess never reads as a
+  measurement. Sortable, and a button opens live directions.
 - **Dark mode** — follows your OS setting, map tiles included.
 
 ## Ranking
