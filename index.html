@@ -414,8 +414,10 @@ button,input,select{font:inherit;color:inherit}
   #nocoord{padding:9px 14px}
 
   /* the floating detail panel becomes a bottom sheet */
-  #card{left:0;right:0;bottom:0;top:auto;width:auto;max-height:78vh;
-        border-radius:var(--r-l) var(--r-l) 0 0;border-bottom:0}
+  /* fixed, not absolute: #map is only 44vh tall and clips its overflow, so an absolute
+     sheet would be stranded mid-screen and cut off */
+  #card{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;max-height:56vh;z-index:40;
+        border-radius:var(--r-l) var(--r-l) 0 0;border-bottom:0;border-left:0;border-right:0}
   #card .ch{border-radius:var(--r-l) var(--r-l) 0 0}
 
   /* favourites: list above, detail below, both scrolling */
@@ -441,6 +443,27 @@ button,input,select{font:inherit;color:inherit}
 
   #dlg .box,#vdlg .box{padding:16px 16px 18px}
   #vdlg .two{flex-direction:column;gap:0}
+
+  /* fingers are not cursors: give every control a real hit area */
+  #list .fs,#fvlist .fs{flex:0 0 40px;width:40px;height:40px;padding:0;font-size:19px;
+    display:flex;align-items:center;justify-content:center;margin:-4px -8px -4px 0}
+  .chip{padding:9px 13px 9px 11px;font-size:12.5px}
+  .chip i{width:10px;height:10px;flex:0 0 10px}
+  #qx{width:28px;height:28px;right:5px;font-size:15px}
+  .tab{min-height:34px}
+  .vacts a,.vacts button,.tdrow .acts a,.tdrow .acts button,.fc .lnk a,.fc .lnk button{
+    min-height:36px;display:inline-flex;align-items:center;justify-content:center}
+  .fd .acts .btn{min-height:42px}
+  .fd .thumbs img{width:74px;height:56px}
+  #card .thumbs img{width:60px;height:46px}
+  #card .x{width:34px;height:34px;font-size:17px}
+  .vlist .vi button,#delbar button{min-height:34px;padding:0 6px}
+  #sort,#q{min-height:40px}
+  .sl input[type=range]{height:28px}
+  /* map pins are the last thing a finger has to hit */
+  .mk{width:21px;height:21px}
+  .mk.lab{width:auto;height:auto;padding:4px 9px;font-size:12px}
+  .mk .star{top:-13px;font-size:14px}
 }
 @media (max-width:420px){
   #nav .brand{display:none}
