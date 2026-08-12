@@ -706,6 +706,19 @@ DATA = DATA.filter(function(d){ return statusKey(d.st) !== "Closed"; });
 --------------------------------------------------------------------------- */
 var EXTRA = [
   {
+    src:"Facebook Marketplace",
+    a:"Pj\u00e4sbacken", ar:"Sundbyberg",
+    lat:59.3745194, lng:17.9351540, mins:27,
+    tot:5150, rent:5000, fee:150,
+    sq:"30", rm:"1", ty:"Room in apartment", c:"Varsha Rajput",
+    st:"Waiting on them",
+    el:"Included", net:1, pk:"",
+    mi:"", le:"", ext:"",
+    lu:"https://www.facebook.com/marketplace/item/1334561681672300/",
+    im:[],
+    no:"\"A student Room in Rissne\". 30 m\u00b2 room with kitchen and dining area in a 98 m\u00b2 four-room flat, two bathrooms, 2 min from Rissne T-bana. Rent includes electricity, heating and wifi; the 150 kr/mo is shared running costs. Deposit 5 000 kr paid on collecting the key. Roommate agreement (rumskompisavtal), NOT a sublet \u2014 the landlord lives there. Wants a non-smoker, sober, stable finances."
+  },
+  {
     src:"Akademisk Kvart",
     a:"Byle all\u00e9 11a", ar:"T\u00e4by",
     lat:59.4990371, lng:18.0895631,
@@ -733,7 +746,7 @@ DATA = DATA.concat(EXTRA);
 /* every listing carries a source; anything pre-existing came from the Qasa inbox */
 DATA.forEach(function(d){ if(!d.src) d.src = "Qasa"; });
 
-var SRC_C = {"Qasa":"#17a08c","Akademisk Kvart":"#dd7a2f","Blocket":"#d9202a","HomeQ":"#5b3df5","Bostad Direkt":"#c2761b","Samtrygg":"#2a7de1","Booli":"#0b7a3b","Hemnet":"#e0165b"};
+var SRC_C = {"Qasa":"#17a08c","Akademisk Kvart":"#dd7a2f","Facebook Marketplace":"#3b6bb5","Blocket":"#d9202a","HomeQ":"#5b3df5","Bostad Direkt":"#c2761b","Samtrygg":"#2a7de1","Booli":"#0b7a3b","Hemnet":"#e0165b"};
 var SRC_FALLBACK = ["#c2559b","#d08327","#3f9e6d","#b4543f","#8a6bbf"];
 var SOURCES = [];
 DATA.forEach(function(d){ if(SOURCES.indexOf(d.src) < 0) SOURCES.push(d.src); });
@@ -957,7 +970,13 @@ function saveDel(){ try{ localStorage.setItem("qasaDeleted", JSON.stringify(DEL)
 function noteOf(d){ return NOTES[favKey(d)] || ""; }
 function hasNote(d){ return !!noteOf(d); }
 var favOnly=false;
-function favKey(d){ var u=(d.lu||"").replace(" (removed)",""); return u ? u.split("/").pop() : (d.a+"|"+d.c); }
+/* Trailing slashes matter: "…/item/123/".split("/").pop() is "", which would give every such
+   listing the same empty key and quietly merge their favourites, notes and viewings. */
+function favKey(d){
+  var u=(d.lu||"").replace(" (removed)","").replace(/\/+$/,"");
+  var last=u ? u.split("/").pop() : "";
+  return last || (d.a+"|"+(d.c||""));
+}
 function isFav(d){ return !!FAV[favKey(d)]; }
 function favCount(){ return DATA.filter(function(d){ return isFav(d) && !isDeleted(d); }).length; }
 function toggleFav(i,ev){
