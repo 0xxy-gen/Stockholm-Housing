@@ -132,6 +132,11 @@ order:
    When a previously proposed viewing gets a time, **update that entry in place**: set its
    `w` to the full timestamp and drop `p`. Do not leave a duplicate proposal behind. If the
    proposal falls through, remove it and say so in the summary.
+   **Never rewrite `w` on an entry that has already been seeded into browsers.** Seeded entries
+   are keyed by date and proposed-ness, so changing the date orphans the browser's copy and the
+   viewing then shows twice on the user's device while looking correct in the data. A proposal
+   whose day has passed keeps its date — the proposal really was for that day — and the note
+   carries the fact that it lapsed.
 5. Match threads to listings on address + contact. The `cu` chat URLs exported from Qasa do
    NOT match the real threads, so never navigate by them — the UI routes Qasa chat links to
    the inbox root instead of to a confidently wrong conversation.
